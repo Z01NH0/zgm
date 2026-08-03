@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ZOINHO GAMES — catálogo oficial de jogos independentes." />
+  <meta name="theme-color" content="#0b0b0e" />
+  <title>ZOINHO GAMES</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#inicio" aria-label="ZOINHO GAMES - Página inicial">
+        <span class="brand-mark" aria-hidden="true">ZG</span>
+        <span class="brand-copy">
+          <strong>ZOINHO</strong>
+          <small>GAMES</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a href="#inicio" data-i18n="navHome">Início</a>
+        <a href="#catalogo" data-i18n="navGames">Jogos</a>
+        <a href="#sobre" data-i18n="navAbout">Sobre</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" id="themeQuickToggle" type="button" aria-label="Alternar tema" title="Alternar tema">
+          <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V2m0 20v-2M4 12H2m20 0h-2M6.34 6.34 4.93 4.93m14.14 14.14-1.41-1.41M17.66 6.34l1.41-1.41M4.93 19.07l1.41-1.41M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>
+          <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.4A8.5 8.5 0 0 1 9.6 3.5 8.5 8.5 0 1 0 20.5 14.4Z"/></svg>
+        </button>
+        <button class="settings-button" id="openSettings" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09a1.7 1.7 0 0 0-1.1-1.58 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09a1.7 1.7 0 0 0 1.58-1.1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09a1.7 1.7 0 0 0 1.1 1.58 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.15.37.36.7.6 1 .3.3.69.47 1.1.5h.09v4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+          <span data-i18n="settings">Configurações</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="inicio">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-orb hero-orb-one" aria-hidden="true"></div>
+      <div class="hero-orb hero-orb-two" aria-hidden="true"></div>
+
+      <div class="shell hero-layout">
+        <div class="hero-copy">
+          <span class="eyebrow"><span class="status-dot"></span><span data-i18n="eyebrow">Jogos independentes, feitos na raça</span></span>
+          <h1><span data-i18n="heroTitleA">Um lugar.</span> <em data-i18n="heroTitleB">Todos os jogos.</em></h1>
+          <p data-i18n="heroDescription">Conheça os mundos da ZOINHO GAMES: ação intensa, sobrevivência, ritmo e experiências criadas para jogar direto no navegador.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#catalogo">
+              <span data-i18n="exploreGames">Explorar jogos</span>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a class="button button-ghost" href="#sobre" data-i18n="knowProject">Conhecer o projeto</a>
+          </div>
+          <dl class="hero-stats" aria-label="Estatísticas do catálogo">
+            <div><dt id="statGamesCount">12</dt><dd data-i18n="statGames">jogos disponíveis</dd></div>
+            <div><dt>100%</dt><dd data-i18n="statBrowser">direto no navegador</dd></div>
+            <div><dt>PC</dt><dd data-i18n="statPlatform">plataforma atual</dd></div>
+          </dl>
+        </div>
+
+        <aside class="featured-card" aria-label="Jogo em destaque">
+          <div class="featured-art" id="featuredArt">
+            <img id="featuredArtImage" class="cover-image" src="assets/covers/chrono-shards.png" alt="Capa de Chrono Shards" />
+            <span class="featured-kicker" data-i18n="featured">EM DESTAQUE</span>
+          </div>
+          <div class="featured-body">
+            <div>
+              <span class="platform-badge">PC</span>
+              <h2 id="featuredTitle">Chrono Shards</h2>
+              <p id="featuredDescription" data-i18n="chronoShort">Sobreviva ao caos temporal e domine combinações poderosas.</p>
+            </div>
+            <a class="round-action" id="featuredLink" href="https://chrono-shard.vercel.app" target="_blank" rel="noopener noreferrer" aria-label="Jogar jogo em destaque">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="catalog-section" id="catalogo">
+      <div class="shell">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker" data-i18n="catalogKicker">CATÁLOGO</span>
+            <h2 data-i18n="catalogTitle">Escolha sua próxima partida</h2>
+          </div>
+          <p data-i18n="catalogDescription">Um catálogo em expansão com ação, estratégia, ritmo, corrida e muito mais.</p>
+        </div>
+
+        <div class="catalog-toolbar">
+          <label class="search-field">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <span class="sr-only" data-i18n="searchLabel">Buscar jogo</span>
+            <input id="gameSearch" type="search" autocomplete="off" placeholder="Buscar por nome ou gênero..." data-i18n-placeholder="searchPlaceholder" />
+          </label>
+          <div class="filter-group" role="group" aria-label="Filtrar jogos">
+            <button class="filter-chip is-active" type="button" data-filter="all" data-i18n="filterAll">Todos</button>
+            <button class="filter-chip" type="button" data-filter="action" data-i18n="filterAction">Ação</button>
+            <button class="filter-chip" type="button" data-filter="survival" data-i18n="filterSurvival">Sobrevivência</button>
+            <button class="filter-chip" type="button" data-filter="strategy" data-i18n="filterStrategy">Estratégia</button>
+            <button class="filter-chip" type="button" data-filter="rpg" data-i18n="filterRpg">RPG</button>
+            <button class="filter-chip" type="button" data-filter="multiplayer" data-i18n="filterMultiplayer">Multiplayer</button>
+          </div>
+        </div>
+
+        <div class="games-grid" id="gamesGrid"></div>
+
+        <div class="empty-state" id="emptyState" hidden>
+          <span aria-hidden="true">×</span>
+          <h3 data-i18n="emptyTitle">Nenhum jogo encontrado</h3>
+          <p data-i18n="emptyDescription">Tente outro nome, gênero ou remova o filtro atual.</p>
+          <button class="button button-ghost" id="clearFilters" type="button" data-i18n="clearFilters">Limpar filtros</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section" id="sobre">
+      <div class="shell about-layout">
+        <div class="about-index" aria-hidden="true">ZG</div>
+        <div class="about-copy">
+          <span class="section-kicker" data-i18n="aboutKicker">SOBRE A ZOINHO GAMES</span>
+          <h2 data-i18n="aboutTitle">Jogos autorais. Ideias sem limite.</h2>
+          <p data-i18n="aboutDescription">A ZOINHO GAMES reúne projetos independentes criados com foco em mecânicas marcantes, identidade própria e diversão imediata. Este portal é a casa oficial de todos eles.</p>
+        </div>
+        <div class="about-points">
+          <article><span>01</span><div><h3 data-i18n="pointOneTitle">Feito de forma independente</h3><p data-i18n="pointOneText">Cada projeto nasce de ideias próprias e evolui com novas atualizações.</p></div></article>
+          <article><span>02</span><div><h3 data-i18n="pointTwoTitle">Jogue sem instalar</h3><p data-i18n="pointTwoText">Abra no navegador, escolha um jogo e comece a jogar.</p></div></article>
+          <article><span>03</span><div><h3 data-i18n="pointThreeTitle">Catálogo em expansão</h3><p data-i18n="pointThreeText">Mais jogos, capas, previews e novidades chegarão ao portal.</p></div></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <a class="brand brand-footer" href="#inicio" aria-label="ZOINHO GAMES">
+        <span class="brand-mark" aria-hidden="true">ZG</span>
+        <span class="brand-copy"><strong>ZOINHO</strong><small>GAMES</small></span>
+      </a>
+      <p>© <span id="currentYear"></span> ZOINHO GAMES. <span data-i18n="rights">Todos os direitos reservados.</span></p>
+      <a href="#inicio" class="back-top"><span data-i18n="backTop">Voltar ao topo</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></a>
+    </div>
+  </footer>
+
+  <dialog class="modal settings-modal" id="settingsModal" aria-labelledby="settingsTitle">
+    <form method="dialog" class="modal-panel">
+      <div class="modal-header">
+        <div><span class="section-kicker" data-i18n="preferences">PREFERÊNCIAS</span><h2 id="settingsTitle" data-i18n="settingsTitle">Configurações</h2></div>
+        <button class="icon-button close-modal" value="cancel" aria-label="Fechar configurações" type="submit">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-copy"><h3 data-i18n="appearance">Aparência</h3><p data-i18n="appearanceText">Escolha a identidade visual do portal.</p></div>
+        <div class="theme-options" role="radiogroup" aria-label="Tema">
+          <label class="theme-option">
+            <input type="radio" name="theme" value="dark" />
+            <span class="theme-preview theme-preview-dark"><i></i><b></b><em></em></span>
+            <span><strong data-i18n="darkTheme">Preto e vermelho</strong><small data-i18n="darkThemeSub">Tema padrão</small></span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="light" />
+            <span class="theme-preview theme-preview-light"><i></i><b></b><em></em></span>
+            <span><strong data-i18n="lightTheme">Branco e azul</strong><small data-i18n="lightThemeSub">Tema claro</small></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="setting-group setting-row">
+        <div class="setting-copy"><h3 data-i18n="language">Idioma</h3><p data-i18n="languageText">Altere o idioma da interface.</p></div>
+        <select id="languageSelect" aria-label="Idioma">
+          <option value="pt-BR">Português (Brasil)</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button class="button button-ghost" id="resetSettings" type="button" data-i18n="reset">Restaurar padrão</button>
+        <button class="button button-primary" value="default" type="submit" data-i18n="done">Concluído</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal game-modal" id="gameModal" aria-labelledby="gameModalTitle">
+    <div class="modal-panel game-modal-panel">
+      <div class="game-modal-art" id="gameModalArt" aria-hidden="true"></div>
+      <div class="game-modal-content">
+        <button class="icon-button game-modal-close" id="closeGameModal" type="button" aria-label="Fechar detalhes">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+        <span class="section-kicker" id="gameModalKicker">JOGO</span>
+        <h2 id="gameModalTitle"></h2>
+        <p id="gameModalDescription"></p>
+        <dl class="detail-list">
+          <div><dt data-i18n="platform">Plataforma</dt><dd>PC</dd></div>
+          <div><dt data-i18n="mode">Modo</dt><dd id="gameModalMode"></dd></div>
+          <div><dt data-i18n="genres">Gêneros</dt><dd id="gameModalGenres"></dd></div>
+          <div><dt data-i18n="createdBy">Criado por</dt><dd id="gameModalCreator">Z01NH0</dd></div>
+        </dl>
+        <a class="button button-primary" id="gameModalLink" target="_blank" rel="noopener noreferrer">
+          <svg class="icon play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
+          <span data-i18n="playNow">Jogar agora</span>
+        </a>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
