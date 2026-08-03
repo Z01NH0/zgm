@@ -428,3 +428,21 @@ html[data-theme="light"] .icon-moon { display: none; }
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+.date-value {
+  min-height: 18px;
+}
+
+.date-loading {
+  width: min(100%, 170px);
+  overflow: hidden;
+  border-radius: 5px;
+  color: transparent !important;
+  background: linear-gradient(90deg, var(--surface-2) 20%, var(--surface-hover) 50%, var(--surface-2) 80%);
+  background-size: 220% 100%;
+  animation: dateLoading 1.2s linear infinite;
+}
+
+@keyframes dateLoading {
+  to { background-position: -220% 0; }
+}
