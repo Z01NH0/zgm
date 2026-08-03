@@ -64,7 +64,11 @@
       platform: 'Plataforma',
       mode: 'Modo',
       genres: 'Gêneros',
+      createdOn: 'Data de criação',
+      lastUpdated: 'Última atualização',
       createdBy: 'Criado por',
+      loadingDates: 'Carregando...',
+      dateUnavailable: 'Não disponível',
       settingsSaved: 'Preferências atualizadas',
       defaultsRestored: 'Configurações restauradas'
     },
@@ -125,7 +129,11 @@
       platform: 'Platform',
       mode: 'Mode',
       genres: 'Genres',
+      createdOn: 'Creation date',
+      lastUpdated: 'Last updated',
       createdBy: 'Created by',
+      loadingDates: 'Loading...',
+      dateUnavailable: 'Unavailable',
       settingsSaved: 'Preferences updated',
       defaultsRestored: 'Settings restored'
     }
@@ -438,6 +446,8 @@
   let currentLanguage = localStorage.getItem(STORAGE_KEYS.language) || 'pt-BR';
   let currentTheme = localStorage.getItem(STORAGE_KEYS.theme) || 'dark';
   let currentOpenGameId = null;
+  let gameDates = {};
+  let datesLoaded = false;
   let toastTimer;
 
   function getCopy() {
@@ -446,6 +456,56 @@
 
   function normalize(value) {
     return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  function formatDate(value, includeTime = false) {
+    if (!value) return getCopy().dateUnavailable;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return getCopy().dateUnavailable;
+
+    const options = includeTime
+      ? { dateStyle: 'long', timeStyle: 'short' }
+      : { dateStyle: 'long' };
+
+    return new Intl.DateTimeFormat(currentLanguage, options).format(date);
+  }
+
+  function renderGameDates(gameId) {
+    const createdElement = document.getElementById('gameModalCreatedAt');
+    const updatedElement = document.getElementById('gameModalUpdatedAt');
+    if (!createdElement || !updatedElement) return;
+
+    const info = gameDates[gameId];
+    const isLoading = !datesLoaded && !info;
+    createdElement.classList.toggle('date-loading', isLoading);
+    updatedElement.classList.toggle('date-loading', isLoading);
+
+    if (isLoading) {
+      createdElement.textContent = getCopy().loadingDates;
+      updatedElement.textContent = getCopy().loadingDates;
+      return;
+    }
+
+    createdElement.textContent = formatDate(info?.createdAt, false);
+    updatedElement.textContent = formatDate(info?.updatedAt, true);
+  }
+
+  async function loadGameDates() {
+    try {
+      const response = await fetch('/api/games-info', {
+        headers: { Accept: 'application/json' }
+      });
+
+      if (!response.ok) throw new Error(`games-info returned ${response.status}`);
+      const payload = await response.json();
+      gameDates = payload?.games && typeof payload.games === 'object' ? payload.games : {};
+    } catch (error) {
+      console.warn('[ZOINHO GAMES] Não foi possível carregar as datas dos jogos.', error);
+      gameDates = {};
+    } finally {
+      datesLoaded = true;
+      if (currentOpenGameId) renderGameDates(currentOpenGameId);
+    }
   }
 
   function applyTheme(theme, persist = true) {
@@ -593,6 +653,7 @@
     document.getElementById('gameModalMode').textContent = game.mode[currentLanguage];
     document.getElementById('gameModalGenres').textContent = game.genres[currentLanguage];
     document.getElementById('gameModalCreator').textContent = game.creator;
+    renderGameDates(game.id);
     document.getElementById('gameModalLink').href = game.url;
     if (!keepOpen) openModal(gameModal);
   }
@@ -661,6 +722,7 @@
   renderStats();
   renderFeatured();
   renderCatalog();
+  loadGameDates();
   applyTheme(currentTheme, false);
   applyLanguage(currentLanguage, false);
   setActiveFilter('all');
