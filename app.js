@@ -39,8 +39,8 @@
       emptyDescription: 'Tente outro nome, gênero ou remova o filtro atual.',
       clearFilters: 'Limpar filtros',
       aboutKicker: 'SOBRE A ZOINHO GAMES',
-      aboutTitle: 'Jogos autorais. Ideias sem limite.',
-      aboutDescription: 'A ZOINHO GAMES reúne projetos independentes criados com foco em mecânicas marcantes, identidade própria e diversão imediata. Este portal é a casa oficial de todos eles.',
+      aboutTitle: 'Jogos independentes. Ideias sem limite.',
+      aboutDescription: 'A ZOINHO GAMES reúne jogos de Z01NH0 e projetos de criadores parceiros em um só catálogo, com foco em experiências marcantes e diversão direta no navegador.',
       pointOneTitle: 'Feito de forma independente',
       pointOneText: 'Cada projeto nasce de ideias próprias e evolui com novas atualizações.',
       pointTwoTitle: 'Jogue sem instalar',
@@ -69,6 +69,7 @@
       createdBy: 'Criado por',
       loadingDates: 'Carregando...',
       dateUnavailable: 'Não disponível',
+      noData: 'Sem Dados',
       settingsSaved: 'Preferências atualizadas',
       defaultsRestored: 'Configurações restauradas'
     },
@@ -104,8 +105,8 @@
       emptyDescription: 'Try another name or genre, or remove the current filter.',
       clearFilters: 'Clear filters',
       aboutKicker: 'ABOUT ZOINHO GAMES',
-      aboutTitle: 'Original games. Limitless ideas.',
-      aboutDescription: 'ZOINHO GAMES brings together independent projects focused on memorable mechanics, a distinct identity and immediate fun. This portal is their official home.',
+      aboutTitle: 'Independent games. Limitless ideas.',
+      aboutDescription: 'ZOINHO GAMES brings together games by Z01NH0 and projects from partner creators in one catalog, focused on memorable experiences and browser-ready fun.',
       pointOneTitle: 'Independently made',
       pointOneText: 'Each project starts with original ideas and grows through new updates.',
       pointTwoTitle: 'Play without installing',
@@ -134,6 +135,7 @@
       createdBy: 'Created by',
       loadingDates: 'Loading...',
       dateUnavailable: 'Unavailable',
+      noData: 'No Data',
       settingsSaved: 'Preferences updated',
       defaultsRestored: 'Settings restored'
     }
@@ -428,6 +430,188 @@
         'pt-BR': 'Proteja o núcleo de uma fortaleza futurista contra ondas crescentes de drones, tropas de elite e chefes colossais. Construa e aprimore oito tipos de defesa, incluindo canhões, barreiras, extratores, morteiros, unidades interceptadoras e armas do vazio. Administre créditos, utilize poderes orbitais, complete objetivos e invista os fragmentos conquistados em pesquisas permanentes para enfrentar operações cada vez mais perigosas.',
         en: 'Protect the core of a futuristic fortress against growing waves of drones, elite troops and colossal bosses. Build and upgrade eight types of defenses, including cannons, barriers, extractors, mortars, interceptor units and void weapons. Manage credits, use orbital powers, complete objectives and invest earned fragments in permanent research to face increasingly dangerous operations.'
       }
+    },
+    {
+      id: 'blockbar',
+      order: 13,
+      title: 'Blockbar',
+      url: 'https://gamebloorck.vercel.app',
+      image: 'assets/covers/blockbar.png',
+      kicker: 'RETRO PLATFORMER',
+      creator: 'Klipza',
+      datesAvailable: false,
+      platform: { 'pt-BR': 'PC / Celular', en: 'PC / Mobile' },
+      categories: ['action', 'platformer', 'mobile', 'retro'],
+      tags: { 'pt-BR': ['Plataforma 2D', 'Ação', 'Retrô'], en: ['2D Platformer', 'Action', 'Retro'] },
+      mode: { 'pt-BR': 'Singleplayer', en: 'Single-player' },
+      genres: {
+        'pt-BR': 'Plataforma 2D e Action Platformer.',
+        en: '2D Platformer and Action Platformer.'
+      },
+      short: {
+        'pt-BR': 'Supere 10 fases retrô, colete moedas e enfrente inimigos e chefes.',
+        en: 'Clear 10 retro stages, collect coins and face enemies and bosses.'
+      },
+      description: {
+        'pt-BR': 'Blockbar é um jogo de plataforma em estilo retrô desenvolvido pela Klipza Estudio. Controle o herói em uma jornada de 10 níveis desafiadores, colete moedas, derrote inimigos e enfrente chefes poderosos. Com estética pixelada e controles responsivos, o jogo funciona tanto no computador quanto no celular.',
+        en: 'Blockbar is a retro-style platform game developed by Klipza Estudio. Control the hero through 10 challenging levels, collect coins, defeat enemies and face powerful bosses. With pixel-art visuals and responsive controls, the game works on both computers and mobile devices.'
+      }
+    },
+    {
+      id: 'sunset-rush',
+      order: 14,
+      title: 'Sunset Rush – Fúria do Pôr do Sol',
+      url: 'https://car-pend.vercel.app',
+      image: 'assets/covers/sunset-rush.png',
+      kicker: 'ENDLESS RACING',
+      creator: 'Klipza',
+      datesAvailable: false,
+      platform: { 'pt-BR': 'PC / Celular', en: 'PC / Mobile' },
+      categories: ['action', 'racing', 'arcade', 'mobile'],
+      tags: { 'pt-BR': ['Corrida', 'Endless Runner', '3D'], en: ['Racing', 'Endless Runner', '3D'] },
+      mode: { 'pt-BR': 'Singleplayer', en: 'Single-player' },
+      genres: {
+        'pt-BR': 'Corrida e Endless Runner 3D.',
+        en: 'Racing and 3D Endless Runner.'
+      },
+      short: {
+        'pt-BR': 'Corra por estradas costeiras, desvie do tráfego e avance por novos biomas.',
+        en: 'Race along coastal roads, dodge traffic and progress through new biomes.'
+      },
+      description: {
+        'pt-BR': 'Sunset Rush é um jogo de corrida 3D em estilo endless runner desenvolvido pela Klipza Estudio. Assuma o volante em uma estrada costeira banhada pelo sol poente, desvie do tráfego, colete itens e acumule pontos em uma jornada através de biomas variados. O jogo conta com gráficos imersivos, física realista e progressão profunda.',
+        en: 'Sunset Rush is a 3D endless-runner racing game developed by Klipza Estudio. Take the wheel on a coastal road bathed in sunset light, dodge traffic, collect items and score points across varied biomes. The game features immersive graphics, realistic physics and deep progression.'
+      }
+    },
+    {
+      id: 'blue-space',
+      order: 15,
+      title: 'BLUE SPACE',
+      url: 'https://blue-space-pearl.vercel.app',
+      image: 'assets/covers/blue-space.png',
+      kicker: 'SPACE COMBAT',
+      creator: 'Klipza',
+      datesAvailable: false,
+      platform: { 'pt-BR': 'PC / Celular', en: 'PC / Mobile' },
+      categories: ['action', 'shooter', 'space', 'mobile'],
+      tags: { 'pt-BR': ['Space Shooter', 'Combate 3D', 'Exploração'], en: ['Space Shooter', '3D Combat', 'Exploration'] },
+      mode: { 'pt-BR': 'Singleplayer', en: 'Single-player' },
+      genres: {
+        'pt-BR': 'Space Shooter 3D e Space Combat.',
+        en: '3D Space Shooter and Space Combat.'
+      },
+      short: {
+        'pt-BR': 'Pilote sua nave, destrua inimigos e desvende os segredos da Dimensão X.',
+        en: 'Pilot your ship, destroy enemies and uncover the secrets of Dimension X.'
+      },
+      description: {
+        'pt-BR': 'BLUE SPACE é um jogo de combate e exploração espacial em 3D desenvolvido pela Klipza Estudio. Pilote sua nave através do cosmos, desvie de meteoros, destrua naves inimigas e desvende os segredos da Dimensão X. Com gráficos imersivos, física realista e progressão profunda, o jogo oferece uma experiência espacial completa.',
+        en: 'BLUE SPACE is a 3D space combat and exploration game developed by Klipza Estudio. Pilot your ship across the cosmos, dodge meteors, destroy enemy vessels and uncover the secrets of Dimension X. With immersive graphics, realistic physics and deep progression, it delivers a complete space experience.'
+      }
+    },
+    {
+      id: 'spacefn',
+      order: 16,
+      title: 'SpaceFN',
+      url: 'https://space-fn0.vercel.app',
+      image: 'assets/covers/spacefn.png',
+      kicker: 'GALACTIC SHOOTER',
+      creator: 'Klipza',
+      datesAvailable: false,
+      platform: { 'pt-BR': 'PC / Celular', en: 'PC / Mobile' },
+      categories: ['action', 'shooter', 'arena', 'space', 'mobile'],
+      tags: { 'pt-BR': ['Shooter 2D', 'Arena Shooter', 'Espacial'], en: ['2D Shooter', 'Arena Shooter', 'Space'] },
+      mode: { 'pt-BR': 'Singleplayer', en: 'Single-player' },
+      genres: {
+        'pt-BR': 'Shooter 2D e Arena Shooter.',
+        en: '2D Shooter and Arena Shooter.'
+      },
+      short: {
+        'pt-BR': 'Destrua ondas espaciais, enfrente chefes e evolua sua frota.',
+        en: 'Destroy space waves, face bosses and upgrade your fleet.'
+      },
+      description: {
+        'pt-BR': 'SpaceFN é um jogo de tiro espacial desenvolvido pela Klipza Studio com uma pegada competitiva e progressão viciante. Domine o espaço, destrua ondas de naves inimigas, enfrente chefes imponentes e conquiste recursos para evoluir sua frota. Com loja, eventos diários, personalização de naves e comunidade integrada, SpaceFN é uma experiência galáctica em constante evolução.',
+        en: 'SpaceFN is a space shooter developed by Klipza Studio with competitive gameplay and addictive progression. Dominate space, destroy waves of enemy ships, face imposing bosses and earn resources to upgrade your fleet. With a shop, daily events, ship customization and an integrated community, SpaceFN is an evolving galactic experience.'
+      }
+    },
+    {
+      id: 'escape',
+      order: 17,
+      title: 'Escape – A Jornada do Herói',
+      url: 'https://black-zeta-liard.vercel.app',
+      image: 'assets/covers/escape.png',
+      kicker: 'PUZZLE PLATFORMER',
+      creator: 'Klipza',
+      datesAvailable: false,
+      platform: { 'pt-BR': 'PC / Celular', en: 'PC / Mobile' },
+      categories: ['action', 'platformer', 'puzzle', 'mobile', 'retro'],
+      tags: { 'pt-BR': ['Plataforma 2D', 'Puzzle', 'Pixel Art'], en: ['2D Platformer', 'Puzzle', 'Pixel Art'] },
+      mode: { 'pt-BR': 'Singleplayer / Protótipo', en: 'Single-player / Prototype' },
+      genres: {
+        'pt-BR': 'Plataforma 2D e Puzzle Platformer.',
+        en: '2D Platformer and Puzzle Platformer.'
+      },
+      short: {
+        'pt-BR': 'Fuja de uma masmorra pixelada repleta de criaturas, armadilhas e desafios.',
+        en: 'Escape a pixel-art dungeon filled with creatures, traps and challenges.'
+      },
+      description: {
+        'pt-BR': 'Escape é um jogo de plataforma 2D retrô desenvolvido pela Klipza Studio como um protótipo interativo. O jogo ainda está em fase de desenvolvimento e testes, mas já oferece uma experiência divertida e desafiadora. Controle um herói pixelado em uma missão de fuga de uma masmorra ou castelo infestado de criaturas perigosas. Com gráficos em pixel art, controles simples e jogabilidade direta, o jogo presta homenagem aos clássicos do gênero.',
+        en: 'Escape is a retro 2D platform game developed by Klipza Studio as an interactive prototype. It is still in development and testing, but already offers a fun and challenging experience. Control a pixel hero on a mission to escape a dungeon or castle infested with dangerous creatures. Its pixel-art graphics, simple controls and direct gameplay pay tribute to classic platformers.'
+      }
+    },
+    {
+      id: 't-34-85',
+      order: 18,
+      title: 'T-34/85 – Guerra Mundial',
+      url: 'https://atack-em-area.vercel.app/',
+      image: 'assets/covers/t-34-85.png',
+      kicker: 'WAR SIMULATOR',
+      creator: 'Klipza',
+      datesAvailable: false,
+      platform: { 'pt-BR': 'PC', en: 'PC' },
+      categories: ['action', 'simulation', 'war', 'combat'],
+      tags: { 'pt-BR': ['Simulação', 'Tanques', 'Combate 3D'], en: ['Simulation', 'Tanks', '3D Combat'] },
+      mode: { 'pt-BR': 'Singleplayer', en: 'Single-player' },
+      genres: {
+        'pt-BR': 'Combat Simulator e Tanque de Guerra.',
+        en: 'Combat Simulator and Tank Warfare.'
+      },
+      short: {
+        'pt-BR': 'Comande um T-34/85 em uma zona de guerra dinâmica da Segunda Guerra Mundial.',
+        en: 'Command a T-34/85 in a dynamic World War II combat zone.'
+      },
+      description: {
+        'pt-BR': 'T-34/85 – Guerra Mundial é uma experiência interativa em 3D desenvolvida pela Klipza Studio que coloca você no comando do lendário tanque soviético T-34/85 em um campo de batalha da Segunda Guerra Mundial. O projeto combina um modelo 3D detalhado com uma simulação de combate dinâmica, permitindo explorar o tanque em tempo real, enfrentar inimigos como Panzer, Stuka e Me 262 e vivenciar a atmosfera de uma zona de guerra.',
+        en: 'T-34/85 – World War is an interactive 3D experience developed by Klipza Studio that puts you in command of the legendary Soviet T-34/85 tank on a World War II battlefield. The project combines a detailed 3D model with dynamic combat simulation, allowing you to explore the tank in real time, face enemies such as the Panzer, Stuka and Me 262, and experience the atmosphere of a war zone.'
+      }
+    },
+    {
+      id: 'hortum',
+      order: 19,
+      title: 'HORTUM',
+      url: 'https://sobre-desastre.vercel.app',
+      image: 'assets/covers/hortum.png',
+      kicker: 'TORNADO SIMULATION',
+      creator: 'Klipza',
+      datesAvailable: false,
+      platform: { 'pt-BR': 'PC', en: 'PC' },
+      categories: ['simulation', 'physics', 'disaster'],
+      tags: { 'pt-BR': ['Simulação', 'Tornado', 'Física'], en: ['Simulation', 'Tornado', 'Physics'] },
+      mode: { 'pt-BR': 'Singleplayer / Simulação', en: 'Single-player / Simulation' },
+      genres: {
+        'pt-BR': 'Simulação de Desastres Naturais e Física Ambiental.',
+        en: 'Natural Disaster Simulation and Environmental Physics.'
+      },
+      short: {
+        'pt-BR': 'Observe um tornado EF4 evoluir e destruir um ambiente físico em tempo real.',
+        en: 'Watch an EF4 tornado evolve and destroy a physics-driven environment in real time.'
+      },
+      description: {
+        'pt-BR': 'HORTUM 3D é uma simulação interativa de tornados desenvolvida pela Klipza Studio que combina física avançada com um calendário de desastres em tempo real. Você controla um piloto ou câmera em um campo aberto enquanto um tornado EF4 se forma, evolui e varre a paisagem, destruindo tudo em seu caminho. Com gráficos em 3D, partículas, ventos dinâmicos e física de corpos rígidos e fluidos, a experiência apresenta de forma imersiva e educativa a força da natureza.',
+        en: 'HORTUM 3D is an interactive tornado simulation developed by Klipza Studio, combining advanced physics with a real-time disaster calendar. You control a pilot or camera in an open field while an EF4 tornado forms, evolves and sweeps across the landscape, destroying everything in its path. With 3D graphics, particles, dynamic winds and rigid-body and fluid physics, it offers an immersive and educational look at the force of nature.'
+      }
     }
   ];
 
@@ -474,6 +658,15 @@
     const createdElement = document.getElementById('gameModalCreatedAt');
     const updatedElement = document.getElementById('gameModalUpdatedAt');
     if (!createdElement || !updatedElement) return;
+
+    const game = games.find(item => item.id === gameId);
+    if (game?.datesAvailable === false) {
+      createdElement.classList.remove('date-loading');
+      updatedElement.classList.remove('date-loading');
+      createdElement.textContent = getCopy().noData;
+      updatedElement.textContent = getCopy().noData;
+      return;
+    }
 
     const info = gameDates[gameId];
     const isLoading = !datesLoaded && !info;
@@ -530,6 +723,7 @@
   function createCard(game) {
     const copy = getCopy();
     const tags = game.tags[currentLanguage] || game.tags['pt-BR'];
+    const platform = game.platform?.[currentLanguage] || 'PC';
     return `
       <article class="game-card" data-game="${game.id}" data-categories="${game.categories.join(' ')}">
         <div class="game-art">
@@ -538,7 +732,7 @@
           <span class="art-title">${game.title}</span>
         </div>
         <div class="game-content">
-          <div class="game-meta"><span class="platform-badge">PC</span><span class="availability"><i></i><span>${copy.available}</span></span></div>
+          <div class="game-meta"><span class="platform-badge">${platform}</span><span class="availability"><i></i><span>${copy.available}</span></span></div>
           <h3>${game.title}</h3>
           <p>${game.short[currentLanguage]}</p>
           <div class="genre-list" aria-label="${copy.genres}">${tags.map(tag => `<span>${tag}</span>`).join('')}</div>
@@ -650,6 +844,7 @@
     document.getElementById('gameModalKicker').textContent = game.kicker;
     document.getElementById('gameModalTitle').textContent = game.title;
     document.getElementById('gameModalDescription').textContent = game.description[currentLanguage];
+    document.getElementById('gameModalPlatform').textContent = game.platform?.[currentLanguage] || 'PC';
     document.getElementById('gameModalMode').textContent = game.mode[currentLanguage];
     document.getElementById('gameModalGenres').textContent = game.genres[currentLanguage];
     document.getElementById('gameModalCreator').textContent = game.creator;
