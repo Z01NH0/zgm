@@ -462,29 +462,29 @@
       }
     },
     {
-      id: 'blockbar',
+      id: 'other-side',
       order: 13,
-      title: 'Blockbar',
-      url: 'https://gamebloorck.vercel.app',
-      image: 'assets/covers/blockbar.png',
-      kicker: 'RETRO PLATFORMER',
+      title: 'OTHER SIDE',
+      url: 'https://other-side-ten.vercel.app/',
+      image: 'assets/covers/other-side.png',
+      kicker: 'ATMOSPHERIC PLATFORMER',
       creator: 'Klipza',
       datesAvailable: false,
-      platform: { 'pt-BR': 'PC / Celular', en: 'PC / Mobile' },
-      categories: ['action', 'platformer', 'mobile', 'retro'],
-      tags: { 'pt-BR': ['Plataforma 2D', 'Ação', 'Retrô'], en: ['2D Platformer', 'Action', 'Retro'] },
+      platform: { 'pt-BR': 'PC', en: 'PC' },
+      categories: ['action', 'platformer', 'puzzle', 'narrative'],
+      tags: { 'pt-BR': ['Ação', 'Plataforma 2.5D', 'Puzzle'], en: ['Action', '2.5D Platformer', 'Puzzle'] },
       mode: { 'pt-BR': 'Singleplayer', en: 'Single-player' },
       genres: {
-        'pt-BR': 'Plataforma 2D e Action Platformer.',
-        en: '2D Platformer and Action Platformer.'
+        'pt-BR': 'Ação / Plataforma 2.5D com elementos de puzzle e narrativa atmosférica.',
+        en: 'Action / 2.5D Platformer with puzzle elements and atmospheric storytelling.'
       },
       short: {
-        'pt-BR': 'Supere 10 fases retrô, colete moedas e enfrente inimigos e chefes.',
-        en: 'Clear 10 retro stages, collect coins and face enemies and bosses.'
+        'pt-BR': 'Atravesse os sete círculos do Submundo Digital e reconecte mente e corpo.',
+        en: 'Cross the seven circles of the Digital Underworld and reconnect mind and body.'
       },
       description: {
-        'pt-BR': 'Blockbar é um jogo de plataforma em estilo retrô desenvolvido pela Klipza Estudio. Controle o herói em uma jornada de 10 níveis desafiadores, colete moedas, derrote inimigos e enfrente chefes poderosos. Com estética pixelada e controles responsivos, o jogo funciona tanto no computador quanto no celular.',
-        en: 'Blockbar is a retro-style platform game developed by Klipza Estudio. Control the hero through 10 challenging levels, collect coins, defeat enemies and face powerful bosses. With pixel-art visuals and responsive controls, the game works on both computers and mobile devices.'
+        'pt-BR': 'Você é um fantasma aprisionado no Submundo Digital, uma dimensão feita de dados corrompidos e memórias em decomposição. Após um colapso neural, sua consciência foi fragmentada em dois núcleos — dois neurônios artificiais que ainda pulsam com uma única sinapse. Para voltar à vida, você precisa percorrer os sete círculos do subnível, coletar fragmentos de sua própria identidade e reativar o elo perdido entre mente e corpo. Cada passo no submundo é uma corrida contra o esquecimento: se os neurônios se apagarem, você se torna parte do vazio para sempre.',
+        en: 'You are a ghost trapped in the Digital Underworld, a dimension built from corrupted data and decaying memories. After a neural collapse, your consciousness was fragmented into two cores — two artificial neurons still pulsing through a single synapse. To return to life, you must cross the seven circles of the sublevel, collect fragments of your own identity and reactivate the lost link between mind and body. Every step through the underworld is a race against oblivion: if the neurons go dark, you become part of the void forever.'
       }
     },
     {
