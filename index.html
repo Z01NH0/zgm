@@ -37,6 +37,10 @@
           <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4V2m0 20v-2M4 12H2m20 0h-2M6.34 6.34 4.93 4.93m14.14 14.14-1.41-1.41M17.66 6.34l1.41-1.41M4.93 19.07l1.41-1.41M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z"/></svg>
           <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.4A8.5 8.5 0 0 1 9.6 3.5 8.5 8.5 0 1 0 20.5 14.4Z"/></svg>
         </button>
+        <button class="account-button" id="openAccount" type="button" aria-label="Abrir conta ZOINHO">
+          <span class="account-avatar" id="accountAvatar" aria-hidden="true">?</span>
+          <span class="account-button-copy"><strong id="accountButtonTitle" data-i18n="accountLogin">Entrar</strong><small id="accountButtonSubtitle" data-i18n="accountCloudOff">Cloud Save desligado</small></span>
+        </button>
         <button class="settings-button" id="openSettings" type="button">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09a1.7 1.7 0 0 0-1.1-1.58 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09a1.7 1.7 0 0 0 1.58-1.1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09a1.7 1.7 0 0 0 1.1 1.58 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.15.37.36.7.6 1 .3.3.69.47 1.1.5h.09v4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
           <span data-i18n="settings">Configurações</span>
@@ -206,6 +210,63 @@
     </div>
   </footer>
 
+  <dialog class="modal account-modal" id="accountModal" aria-labelledby="accountTitle">
+    <div class="modal-panel account-modal-panel">
+      <div class="modal-header">
+        <div><span class="section-kicker" data-i18n="accountKicker">ZOINHO ACCOUNT</span><h2 id="accountTitle" data-i18n="accountTitle">Sua conta</h2></div>
+        <button class="icon-button close-modal" id="closeAccountModal" type="button" aria-label="Fechar conta">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <div id="authLoggedOut">
+        <div class="auth-tabs" role="tablist" aria-label="Acesso à conta">
+          <button class="auth-tab is-active" id="authLoginTab" type="button" role="tab" aria-selected="true" data-auth-mode="login" data-i18n="accountLogin">Entrar</button>
+          <button class="auth-tab" id="authSignupTab" type="button" role="tab" aria-selected="false" data-auth-mode="signup" data-i18n="accountCreate">Criar conta</button>
+        </div>
+        <form class="auth-form" id="authForm">
+          <label class="auth-field"><span data-i18n="accountEmail">E-mail</span><input id="authEmail" type="email" autocomplete="email" required maxlength="254" /></label>
+          <label class="auth-field"><span data-i18n="accountPassword">Senha</span><input id="authPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128" /></label>
+          <label class="auth-field" id="authPasswordConfirmField" hidden><span data-i18n="accountPasswordConfirm">Confirmar senha</span><input id="authPasswordConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" /></label>
+          <p class="auth-help" id="authHelp" data-i18n="accountLoginHelp">Entre para sincronizar seus saves entre computadores.</p>
+          <p class="auth-error" id="authError" role="alert" hidden></p>
+          <button class="button button-primary auth-submit" id="authSubmit" type="submit" data-i18n="accountLogin">Entrar</button>
+          <button class="auth-link" id="forgotPassword" type="button" data-i18n="accountForgot">Esqueci minha senha</button>
+        </form>
+      </div>
+
+      <div id="authRecovery" hidden>
+        <form class="auth-form" id="recoveryForm">
+          <div class="account-state-icon">↻</div>
+          <h3 data-i18n="accountNewPasswordTitle">Defina uma nova senha</h3>
+          <p class="auth-help" data-i18n="accountNewPasswordHelp">Digite a nova senha para concluir a recuperação da conta.</p>
+          <label class="auth-field"><span data-i18n="accountNewPassword">Nova senha</span><input id="recoveryPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="128" /></label>
+          <label class="auth-field"><span data-i18n="accountPasswordConfirm">Confirmar senha</span><input id="recoveryPasswordConfirm" type="password" autocomplete="new-password" required minlength="8" maxlength="128" /></label>
+          <p class="auth-error" id="recoveryError" role="alert" hidden></p>
+          <button class="button button-primary auth-submit" type="submit" data-i18n="accountUpdatePassword">Atualizar senha</button>
+          <button class="auth-link" id="cancelRecovery" type="button" data-i18n="accountBackLogin">Voltar ao login</button>
+        </form>
+      </div>
+
+      <div id="authLoggedIn" hidden>
+        <section class="account-summary">
+          <div class="account-profile-row">
+            <span class="account-profile-avatar" id="accountProfileAvatar">Z</span>
+            <div><span class="account-status-dot"><i></i><span data-i18n="accountConnected">CONECTADO</span></span><h3 id="accountEmailDisplay">—</h3><p id="accountUserId">—</p></div>
+          </div>
+          <div class="cloud-card">
+            <div class="cloud-card-head"><div><span class="section-kicker">CLOUD SAVE</span><h3 data-i18n="cloudSaveTitle">Sincronização</h3></div><span class="cloud-state" id="cloudStateBadge" data-state="idle" data-i18n="cloudReady">Pronto</span></div>
+            <p id="cloudStateText" data-i18n="cloudReadyText">Blood Machine será sincronizado automaticamente quando aberto pelo portal.</p>
+            <div class="cloud-game-row"><div><strong>Blood Machine</strong><small id="bloodMachineCloudDetail" data-i18n="cloudNeverSynced">Ainda não sincronizado nesta sessão</small></div><span id="bloodMachineCloudIcon" aria-hidden="true">☁</span></div>
+          </div>
+        </section>
+        <div class="modal-footer account-footer">
+          <button class="button button-ghost" id="signOutButton" type="button" data-i18n="accountLogout">Sair da conta</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <dialog class="modal settings-modal" id="settingsModal" aria-labelledby="settingsTitle">
     <form method="dialog" class="modal-panel">
       <div class="modal-header">
@@ -273,6 +334,8 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
