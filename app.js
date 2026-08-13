@@ -3,7 +3,9 @@
 
   const STORAGE_KEYS = {
     theme: 'zoinho-games-theme',
-    language: 'zoinho-games-language'
+    language: 'zoinho-games-language',
+    bridgeCache: 'zoinho-games-storage-bridge-v2',
+    bridgeCacheLegacy: 'zoinho-games-storage-bridge-v1'
   };
 
   const translations = {
@@ -13,6 +15,42 @@
       navAbout: 'Sobre',
       navSupport: 'Suporte e Contato',
       settings: 'Configurações',
+      accountLogin: 'Entrar',
+      accountCreate: 'Criar conta',
+      accountCloudOff: 'Cloud Save desligado',
+      accountCloudOn: 'Cloud Save ativo',
+      accountKicker: 'ZOINHO ACCOUNT',
+      accountTitle: 'Sua conta',
+      accountEmail: 'E-mail',
+      accountPassword: 'Senha',
+      accountPasswordConfirm: 'Confirmar senha',
+      accountLoginHelp: 'Entre para sincronizar seus saves entre computadores.',
+      accountSignupHelp: 'Crie sua conta ZOINHO. O Supabase pode pedir confirmação por e-mail antes do primeiro login.',
+      accountForgot: 'Esqueci minha senha',
+      accountLogout: 'Sair da conta',
+      accountConnected: 'CONECTADO',
+      accountNewPasswordTitle: 'Defina uma nova senha',
+      accountNewPasswordHelp: 'Digite a nova senha para concluir a recuperação da conta.',
+      accountNewPassword: 'Nova senha',
+      accountUpdatePassword: 'Atualizar senha',
+      accountBackLogin: 'Voltar ao login',
+      cloudSaveTitle: 'Sincronização',
+      cloudReady: 'Pronto',
+      cloudSyncing: 'Sincronizando',
+      cloudSynced: 'Sincronizado',
+      cloudError: 'Erro',
+      cloudReadyText: 'Blood Machine será sincronizado automaticamente quando aberto pelo portal.',
+      cloudNeverSynced: 'Ainda não sincronizado nesta sessão',
+      cloudLastSync: 'Última sincronização: {time}',
+      authPasswordsMismatch: 'As senhas não são iguais.',
+      authAccountCreated: 'Conta criada. Confira seu e-mail se a confirmação estiver ativada.',
+      authSignedIn: 'Login realizado.',
+      authSignedOut: 'Você saiu da conta.',
+      authResetSent: 'E-mail de recuperação enviado.',
+      authPasswordUpdated: 'Senha atualizada.',
+      authEnterEmail: 'Digite seu e-mail primeiro.',
+      cloudSavedToast: 'Save sincronizado na nuvem.',
+      cloudLoadError: 'Não foi possível acessar a nuvem. O save local continua protegido.',
       eyebrow: 'Jogos independentes, feitos na raça',
       heroTitleA: 'Um lugar.',
       heroTitleB: 'Todos os jogos.',
@@ -23,6 +61,7 @@
       statBrowser: 'direto no navegador',
       statPlatform: 'plataforma atual',
       featured: 'EM DESTAQUE',
+      chronoShort: 'Sobreviva ao caos temporal e domine combinações poderosas.',
       catalogKicker: 'CATÁLOGO',
       catalogTitle: 'Escolha sua próxima partida',
       catalogDescription: 'Um catálogo em expansão com ação, estratégia, ritmo, corrida e muito mais.',
@@ -94,6 +133,42 @@
       navAbout: 'About',
       navSupport: 'Support & Contact',
       settings: 'Settings',
+      accountLogin: 'Sign in',
+      accountCreate: 'Create account',
+      accountCloudOff: 'Cloud Save off',
+      accountCloudOn: 'Cloud Save active',
+      accountKicker: 'ZOINHO ACCOUNT',
+      accountTitle: 'Your account',
+      accountEmail: 'Email',
+      accountPassword: 'Password',
+      accountPasswordConfirm: 'Confirm password',
+      accountLoginHelp: 'Sign in to sync your saves across computers.',
+      accountSignupHelp: 'Create your ZOINHO account. Supabase may require email confirmation before the first sign-in.',
+      accountForgot: 'Forgot my password',
+      accountLogout: 'Sign out',
+      accountConnected: 'CONNECTED',
+      accountNewPasswordTitle: 'Set a new password',
+      accountNewPasswordHelp: 'Enter your new password to finish account recovery.',
+      accountNewPassword: 'New password',
+      accountUpdatePassword: 'Update password',
+      accountBackLogin: 'Back to sign in',
+      cloudSaveTitle: 'Synchronization',
+      cloudReady: 'Ready',
+      cloudSyncing: 'Syncing',
+      cloudSynced: 'Synced',
+      cloudError: 'Error',
+      cloudReadyText: 'Blood Machine syncs automatically when launched through the portal.',
+      cloudNeverSynced: 'Not synced in this session yet',
+      cloudLastSync: 'Last sync: {time}',
+      authPasswordsMismatch: 'The passwords do not match.',
+      authAccountCreated: 'Account created. Check your email if confirmation is enabled.',
+      authSignedIn: 'Signed in.',
+      authSignedOut: 'Signed out.',
+      authResetSent: 'Recovery email sent.',
+      authPasswordUpdated: 'Password updated.',
+      authEnterEmail: 'Enter your email first.',
+      cloudSavedToast: 'Save synced to the cloud.',
+      cloudLoadError: 'Cloud access failed. Your local save is still protected.',
       eyebrow: 'Independent games, built with passion',
       heroTitleA: 'One place.',
       heroTitleB: 'Every game.',
@@ -104,6 +179,7 @@
       statBrowser: 'play in your browser',
       statPlatform: 'current platform',
       featured: 'FEATURED',
+      chronoShort: 'Survive temporal chaos and master powerful combinations.',
       catalogKicker: 'CATALOG',
       catalogTitle: 'Choose your next game',
       catalogDescription: 'An expanding catalog with action, strategy, rhythm, racing and more.',
@@ -646,6 +722,300 @@
   ];
 
   const root = document.documentElement;
+  const STORAGE_BRIDGE_PROTOCOL = 'zoinho-storage-v1';
+  const STORAGE_BRIDGE_MAX_BYTES = 512 * 1024;
+  const CLOUD_WRITE_DELAY = 650;
+  const storageBridgeGames = new Map([
+    ['blood-machine', {
+      origin: 'https://blood-machine.vercel.app',
+      saveVersion: 1,
+      saveKeys: ['bloodMachineProgressUpdate12']
+    }]
+  ]);
+
+  const supabaseConfig = window.ZOINHO_SUPABASE_CONFIG || {};
+  const supabaseClient = window.supabase?.createClient && supabaseConfig.url && supabaseConfig.publishableKey
+    ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.publishableKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      })
+    : null;
+
+  let authUser = null;
+  let authMode = 'login';
+  let authInitialized = false;
+  let recoveryMode = new URLSearchParams(location.hash.replace(/^#/, '')).get('type') === 'recovery' || new URLSearchParams(location.search).get('type') === 'recovery';
+  const cloudWriteTimers = new Map();
+  const cloudWritePending = new Map();
+  const bridgeWindowBindings = new WeakMap();
+  const cloudState = {
+    state: 'idle',
+    lastSyncAt: null,
+    lastGameId: null,
+    error: null
+  };
+
+  function emptyBridgeCache() {
+    return { version: 2, guest: {}, users: {} };
+  }
+
+  function readBridgeCache() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.bridgeCache) || 'null');
+      if (parsed && parsed.version === 2 && parsed.guest && parsed.users) return parsed;
+    } catch {}
+
+    // Migração não destrutiva do cache usado pelo piloto anterior.
+    const migrated = emptyBridgeCache();
+    try {
+      const legacy = JSON.parse(localStorage.getItem(STORAGE_KEYS.bridgeCacheLegacy) || '{}');
+      if (legacy && typeof legacy === 'object') migrated.guest = legacy;
+    } catch {}
+    return migrated;
+  }
+
+  function writeBridgeCache(cache) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.bridgeCache, JSON.stringify(cache));
+      return true;
+    } catch (error) {
+      console.warn('[ZOINHO Bridge] Não foi possível gravar o cache local do save.', error);
+      return false;
+    }
+  }
+
+  function getBridgeBucket(cache, userId = authUser?.id || null, create = false) {
+    if (!userId) return cache.guest;
+    if (!cache.users[userId] && create) cache.users[userId] = {};
+    return cache.users[userId] || {};
+  }
+
+  function readCachedSnapshot(gameId, userId = authUser?.id || null) {
+    const cache = readBridgeCache();
+    return getBridgeBucket(cache, userId, false)[gameId]?.snapshot || null;
+  }
+
+  function writeCachedSnapshot(gameId, snapshot, userId = authUser?.id || null) {
+    const cache = readBridgeCache();
+    const bucket = getBridgeBucket(cache, userId, true);
+    bucket[gameId] = { snapshot, updatedAt: new Date().toISOString() };
+    return writeBridgeCache(cache);
+  }
+
+  function sanitizeBridgeSnapshot(gameId, snapshot) {
+    const config = storageBridgeGames.get(gameId);
+    if (!config || !snapshot || snapshot.gameId !== gameId || !snapshot.storage || typeof snapshot.storage !== 'object') return null;
+    const storage = {};
+    for (const key of config.saveKeys) {
+      if (!Object.prototype.hasOwnProperty.call(snapshot.storage, key)) continue;
+      const value = snapshot.storage[key];
+      if (typeof value !== 'string') continue;
+      storage[key] = value;
+    }
+    const cleaned = {
+      gameId,
+      storage,
+      clientUpdatedAt: typeof snapshot.clientUpdatedAt === 'string' ? snapshot.clientUpdatedAt : null,
+      portalReceivedAt: typeof snapshot.portalReceivedAt === 'string' ? snapshot.portalReceivedAt : new Date().toISOString()
+    };
+    if (new Blob([JSON.stringify(cleaned)]).size > STORAGE_BRIDGE_MAX_BYTES) return null;
+    return cleaned;
+  }
+
+  function snapshotTimestamp(snapshot) {
+    if (!snapshot) return 0;
+    const clientTime = Date.parse(snapshot.clientUpdatedAt || '');
+    if (Number.isFinite(clientTime)) return clientTime;
+    const receivedTime = Date.parse(snapshot.portalReceivedAt || '');
+    return Number.isFinite(receivedTime) ? receivedTime : 0;
+  }
+
+  function newestSnapshot(a, b) {
+    if (!a) return b || null;
+    if (!b) return a;
+    return snapshotTimestamp(b) > snapshotTimestamp(a) ? b : a;
+  }
+
+  function bridgeLaunchUrl(game) {
+    if (!storageBridgeGames.has(game.id)) return game.url;
+    const url = new URL(game.url);
+    url.searchParams.set('zoinhoBridge', '1');
+    return url.toString();
+  }
+
+  function launchGame(game) {
+    const child = window.open(bridgeLaunchUrl(game), '_blank');
+    if (!child) showToast('O navegador bloqueou a nova aba. Libere pop-ups para jogar.');
+    return child;
+  }
+
+  function bindGameLaunchers() {
+    document.querySelectorAll('[data-launch-game]').forEach(link => {
+      link.addEventListener('click', event => {
+        const game = games.find(item => item.id === link.dataset.launchGame);
+        if (!game) return;
+        event.preventDefault();
+        launchGame(game);
+      });
+    });
+  }
+
+  function cloudRowToSnapshot(gameId, row) {
+    if (!row || !row.save_data || typeof row.save_data !== 'object') return null;
+    return sanitizeBridgeSnapshot(gameId, {
+      gameId,
+      storage: row.save_data,
+      clientUpdatedAt: row.client_updated_at || row.updated_at || null,
+      portalReceivedAt: row.updated_at || null
+    });
+  }
+
+  function setCloudState(state, gameId = null, error = null, syncedAt = null) {
+    cloudState.state = state;
+    cloudState.lastGameId = gameId || cloudState.lastGameId;
+    cloudState.error = error || null;
+    if (syncedAt) cloudState.lastSyncAt = syncedAt;
+    renderCloudState();
+  }
+
+  async function fetchCloudSnapshot(gameId) {
+    if (!supabaseClient || !authUser) return { snapshot: null, error: null };
+    const { data, error } = await supabaseClient
+      .from('game_saves')
+      .select('game_id, save_version, save_data, client_updated_at, updated_at, revision')
+      .eq('user_id', authUser.id)
+      .eq('game_id', gameId)
+      .limit(1);
+    if (error) return { snapshot: null, error };
+    const row = Array.isArray(data) ? data[0] : null;
+    return { snapshot: cloudRowToSnapshot(gameId, row), error: null };
+  }
+
+  async function upsertCloudSnapshot(gameId, snapshot, expectedUserId = authUser?.id || null) {
+    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId) return false;
+    const config = storageBridgeGames.get(gameId);
+    if (!config) return false;
+
+    setCloudState('syncing', gameId);
+    const { data, error } = await supabaseClient
+      .from('game_saves')
+      .upsert({
+        user_id: expectedUserId,
+        game_id: gameId,
+        save_version: config.saveVersion || 1,
+        save_data: snapshot.storage,
+        client_updated_at: snapshot.clientUpdatedAt || new Date().toISOString()
+      }, { onConflict: 'user_id,game_id' })
+      .select('updated_at, revision')
+      .limit(1);
+
+    if (error) {
+      console.warn('[ZOINHO Cloud] Falha ao salvar', gameId, error);
+      setCloudState('error', gameId, error);
+      return false;
+    }
+
+    const syncedAt = data?.[0]?.updated_at || new Date().toISOString();
+    setCloudState('ok', gameId, null, syncedAt);
+    return true;
+  }
+
+  function scheduleCloudSnapshot(gameId, snapshot) {
+    if (!authUser || !supabaseClient) return;
+    const userId = authUser.id;
+    cloudWritePending.set(gameId, { userId, snapshot });
+    clearTimeout(cloudWriteTimers.get(gameId));
+    cloudWriteTimers.set(gameId, setTimeout(async () => {
+      const pending = cloudWritePending.get(gameId);
+      cloudWriteTimers.delete(gameId);
+      cloudWritePending.delete(gameId);
+      if (!pending || authUser?.id !== pending.userId) return;
+      await upsertCloudSnapshot(gameId, pending.snapshot, pending.userId);
+    }, CLOUD_WRITE_DELAY));
+  }
+
+  function clearCloudQueue() {
+    for (const timer of cloudWriteTimers.values()) clearTimeout(timer);
+    cloudWriteTimers.clear();
+    cloudWritePending.clear();
+  }
+
+  async function resolveInitialSnapshot(gameId) {
+    const localSnapshot = readCachedSnapshot(gameId);
+    if (!authUser || !supabaseClient) return localSnapshot;
+
+    setCloudState('syncing', gameId);
+    const { snapshot: cloudSnapshot, error } = await fetchCloudSnapshot(gameId);
+    if (error) {
+      console.warn('[ZOINHO Cloud] Não foi possível carregar o save.', error);
+      setCloudState('error', gameId, error);
+      return localSnapshot;
+    }
+
+    const chosen = newestSnapshot(localSnapshot, cloudSnapshot);
+    if (chosen) writeCachedSnapshot(gameId, chosen, authUser.id);
+
+    if (chosen === localSnapshot && localSnapshot && (!cloudSnapshot || snapshotTimestamp(localSnapshot) > snapshotTimestamp(cloudSnapshot))) {
+      scheduleCloudSnapshot(gameId, localSnapshot);
+    } else {
+      setCloudState('ok', gameId, null, cloudSnapshot ? (cloudSnapshot.portalReceivedAt || cloudSnapshot.clientUpdatedAt) : null);
+    }
+    return chosen;
+  }
+
+  async function handleBridgeMessage(event) {
+    const message = event.data;
+    if (!message || message.protocol !== STORAGE_BRIDGE_PROTOCOL || typeof message.gameId !== 'string') return;
+    const config = storageBridgeGames.get(message.gameId);
+    if (!config || event.origin !== config.origin || !event.source) return;
+    const source = event.source;
+
+    if (message.type === 'ready') {
+      bridgeWindowBindings.set(source, { gameId: message.gameId, userId: authUser?.id || null });
+      const snapshot = await resolveInitialSnapshot(message.gameId);
+      try {
+        source.postMessage({
+          protocol: STORAGE_BRIDGE_PROTOCOL,
+          type: 'init',
+          gameId: message.gameId,
+          snapshot: snapshot || null
+        }, config.origin);
+      } catch (error) {
+        console.warn('[ZOINHO Bridge] A aba do jogo foi fechada durante a sincronização.', error);
+      }
+      return;
+    }
+
+    if (message.type === 'snapshot') {
+      const binding = bridgeWindowBindings.get(source);
+      const currentUserId = authUser?.id || null;
+      if (!binding || binding.gameId !== message.gameId || binding.userId !== currentUserId) {
+        console.warn('[ZOINHO Bridge] Snapshot ignorado porque a conta mudou desde a abertura do jogo. Reabra o jogo pelo portal.');
+        return;
+      }
+
+      const snapshot = sanitizeBridgeSnapshot(message.gameId, message.snapshot);
+      if (!snapshot) {
+        console.warn('[ZOINHO Bridge] Snapshot rejeitado para', message.gameId);
+        return;
+      }
+
+      const userId = authUser?.id || null;
+      const cached = writeCachedSnapshot(message.gameId, snapshot, userId);
+      if (cached && authUser) scheduleCloudSnapshot(message.gameId, snapshot);
+
+      try {
+        source.postMessage({ protocol: STORAGE_BRIDGE_PROTOCOL, type: 'ack', gameId: message.gameId }, config.origin);
+      } catch {}
+      console.info('[ZOINHO Bridge] Save recebido:', message.gameId);
+    }
+  }
+
+  addEventListener('message', event => { void handleBridgeMessage(event); });
+
   const settingsModal = document.getElementById('settingsModal');
   const gameModal = document.getElementById('gameModal');
   const languageSelect = document.getElementById('languageSelect');
@@ -655,6 +1025,36 @@
   const gamesGrid = document.getElementById('gamesGrid');
   const emptyState = document.getElementById('emptyState');
   const toast = document.getElementById('toast');
+  const accountModal = document.getElementById('accountModal');
+  const openAccountButton = document.getElementById('openAccount');
+  const accountButtonTitle = document.getElementById('accountButtonTitle');
+  const accountButtonSubtitle = document.getElementById('accountButtonSubtitle');
+  const accountAvatar = document.getElementById('accountAvatar');
+  const authLoggedOut = document.getElementById('authLoggedOut');
+  const authLoggedIn = document.getElementById('authLoggedIn');
+  const authRecovery = document.getElementById('authRecovery');
+  const authForm = document.getElementById('authForm');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const authPasswordConfirmField = document.getElementById('authPasswordConfirmField');
+  const authPasswordConfirm = document.getElementById('authPasswordConfirm');
+  const authHelp = document.getElementById('authHelp');
+  const authError = document.getElementById('authError');
+  const authSubmit = document.getElementById('authSubmit');
+  const forgotPassword = document.getElementById('forgotPassword');
+  const recoveryForm = document.getElementById('recoveryForm');
+  const recoveryPassword = document.getElementById('recoveryPassword');
+  const recoveryPasswordConfirm = document.getElementById('recoveryPasswordConfirm');
+  const recoveryError = document.getElementById('recoveryError');
+  const cancelRecovery = document.getElementById('cancelRecovery');
+  const signOutButton = document.getElementById('signOutButton');
+  const accountEmailDisplay = document.getElementById('accountEmailDisplay');
+  const accountUserId = document.getElementById('accountUserId');
+  const accountProfileAvatar = document.getElementById('accountProfileAvatar');
+  const cloudStateBadge = document.getElementById('cloudStateBadge');
+  const cloudStateText = document.getElementById('cloudStateText');
+  const bloodMachineCloudDetail = document.getElementById('bloodMachineCloudDetail');
+  const bloodMachineCloudIcon = document.getElementById('bloodMachineCloudIcon');
 
   let activeFilter = 'all';
   let currentLanguage = localStorage.getItem(STORAGE_KEYS.language) || 'pt-BR';
@@ -666,6 +1066,199 @@
 
   function getCopy() {
     return translations[currentLanguage] || translations['pt-BR'];
+  }
+
+  function accountInitial(user) {
+    return String(user?.email || 'Z').trim().charAt(0).toUpperCase() || 'Z';
+  }
+
+  function setAuthMessage(element, message = '') {
+    if (!element) return;
+    element.textContent = message;
+    element.hidden = !message;
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode === 'signup' ? 'signup' : 'login';
+    document.querySelectorAll('[data-auth-mode]').forEach(button => {
+      const active = button.dataset.authMode === authMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    authPasswordConfirmField.hidden = authMode !== 'signup';
+    authPasswordConfirm.required = authMode === 'signup';
+    authPassword.autocomplete = authMode === 'signup' ? 'new-password' : 'current-password';
+    authSubmit.textContent = authMode === 'signup' ? getCopy().accountCreate : getCopy().accountLogin;
+    authHelp.textContent = authMode === 'signup' ? getCopy().accountSignupHelp : getCopy().accountLoginHelp;
+    forgotPassword.hidden = authMode !== 'login';
+    setAuthMessage(authError);
+  }
+
+  function renderCloudState() {
+    if (!cloudStateBadge || !cloudStateText) return;
+    const copy = getCopy();
+    const state = cloudState.state;
+    cloudStateBadge.dataset.state = state;
+    cloudStateBadge.textContent = state === 'syncing'
+      ? copy.cloudSyncing
+      : state === 'ok'
+        ? copy.cloudSynced
+        : state === 'error'
+          ? copy.cloudError
+          : copy.cloudReady;
+
+    if (state === 'error') cloudStateText.textContent = copy.cloudLoadError;
+    else cloudStateText.textContent = copy.cloudReadyText;
+
+    if (cloudState.lastSyncAt) {
+      const date = new Date(cloudState.lastSyncAt);
+      const formatted = Number.isNaN(date.getTime()) ? cloudState.lastSyncAt : new Intl.DateTimeFormat(currentLanguage, { dateStyle: 'short', timeStyle: 'short' }).format(date);
+      bloodMachineCloudDetail.textContent = copy.cloudLastSync.replace('{time}', formatted);
+      bloodMachineCloudIcon.textContent = '✓';
+    } else {
+      bloodMachineCloudDetail.textContent = copy.cloudNeverSynced;
+      bloodMachineCloudIcon.textContent = '☁';
+    }
+  }
+
+  function renderAccount() {
+    const copy = getCopy();
+    const signedIn = Boolean(authUser);
+    openAccountButton.classList.toggle('is-online', signedIn);
+
+    if (signedIn) {
+      const email = authUser.email || 'ZOINHO Account';
+      accountButtonTitle.textContent = email;
+      accountButtonSubtitle.textContent = copy.accountCloudOn;
+      accountAvatar.textContent = accountInitial(authUser);
+      accountEmailDisplay.textContent = email;
+      accountUserId.textContent = authUser.id;
+      accountProfileAvatar.textContent = accountInitial(authUser);
+    } else {
+      accountButtonTitle.textContent = copy.accountLogin;
+      accountButtonSubtitle.textContent = copy.accountCloudOff;
+      accountAvatar.textContent = '?';
+    }
+
+    authLoggedOut.hidden = signedIn || recoveryMode;
+    authLoggedIn.hidden = !signedIn || recoveryMode;
+    authRecovery.hidden = !recoveryMode;
+    renderCloudState();
+  }
+
+  function resetCloudSessionState() {
+    cloudState.state = 'idle';
+    cloudState.lastSyncAt = null;
+    cloudState.lastGameId = null;
+    cloudState.error = null;
+    renderCloudState();
+  }
+
+  function handleSession(session, eventName = '') {
+    const previousId = authUser?.id || null;
+    authUser = session?.user || null;
+    const currentId = authUser?.id || null;
+    if (previousId !== currentId) {
+      clearCloudQueue();
+      resetCloudSessionState();
+    }
+    if (eventName === 'PASSWORD_RECOVERY') recoveryMode = true;
+    if (eventName === 'SIGNED_OUT') recoveryMode = false;
+    authInitialized = true;
+    renderAccount();
+  }
+
+  async function initAuth() {
+    if (!supabaseClient) {
+      console.error('[ZOINHO Auth] Supabase JS/configuração não carregados.');
+      authInitialized = true;
+      renderAccount();
+      return;
+    }
+
+    supabaseClient.auth.onAuthStateChange((eventName, session) => {
+      queueMicrotask(() => handleSession(session, eventName));
+    });
+
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) console.warn('[ZOINHO Auth] Não foi possível restaurar a sessão.', error);
+    handleSession(data?.session || null, 'INITIAL_SESSION');
+  }
+
+  async function submitAuthForm(event) {
+    event.preventDefault();
+    if (!supabaseClient) return setAuthMessage(authError, 'Supabase indisponível.');
+    setAuthMessage(authError);
+
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    if (authMode === 'signup' && password !== authPasswordConfirm.value) {
+      return setAuthMessage(authError, getCopy().authPasswordsMismatch);
+    }
+
+    authSubmit.disabled = true;
+    try {
+      if (authMode === 'signup') {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${location.origin}${location.pathname}` }
+        });
+        if (error) throw error;
+        showToast(getCopy().authAccountCreated);
+        if (!data?.session) setAuthMode('login');
+      } else {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        showToast(getCopy().authSignedIn);
+      }
+      authPassword.value = '';
+      authPasswordConfirm.value = '';
+    } catch (error) {
+      setAuthMessage(authError, error?.message || String(error));
+    } finally {
+      authSubmit.disabled = false;
+    }
+  }
+
+  async function sendPasswordReset() {
+    if (!supabaseClient) return;
+    const email = authEmail.value.trim();
+    if (!email) {
+      setAuthMessage(authError, getCopy().authEnterEmail);
+      authEmail.focus();
+      return;
+    }
+    setAuthMessage(authError);
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}${location.pathname}`
+    });
+    if (error) setAuthMessage(authError, error.message);
+    else showToast(getCopy().authResetSent);
+  }
+
+  async function submitRecoveryForm(event) {
+    event.preventDefault();
+    if (!supabaseClient) return;
+    setAuthMessage(recoveryError);
+    if (recoveryPassword.value !== recoveryPasswordConfirm.value) {
+      return setAuthMessage(recoveryError, getCopy().authPasswordsMismatch);
+    }
+    const { error } = await supabaseClient.auth.updateUser({ password: recoveryPassword.value });
+    if (error) return setAuthMessage(recoveryError, error.message);
+    recoveryMode = false;
+    recoveryPassword.value = '';
+    recoveryPasswordConfirm.value = '';
+    renderAccount();
+    showToast(getCopy().authPasswordUpdated);
+  }
+
+  async function signOut() {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) return showToast(error.message);
+    showToast(getCopy().authSignedOut);
+    closeModal(accountModal);
   }
 
   function normalize(value) {
@@ -767,7 +1360,7 @@
           <p>${game.short[currentLanguage]}</p>
           <div class="genre-list" aria-label="${copy.genres}">${tags.map(tag => `<span>${tag}</span>`).join('')}</div>
           <div class="game-actions">
-            <a class="button button-primary button-play" href="${game.url}" target="_blank" rel="noopener noreferrer">
+            <a class="button button-primary button-play" href="${game.url}" target="_blank" rel="noopener noreferrer" data-launch-game="${game.id}">
               <svg class="icon play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
               <span>${copy.playNow}</span>
             </a>
@@ -781,6 +1374,7 @@
 
   function renderCatalog() {
     gamesGrid.innerHTML = games.map(createCard).join('');
+    bindGameLaunchers();
     document.querySelectorAll('.game-details').forEach(button => {
       button.addEventListener('click', () => openGameDetails(button.dataset.gameId));
     });
@@ -793,7 +1387,9 @@
     document.getElementById('featuredArtImage').alt = `${featuredGame.title} cover`;
     document.getElementById('featuredTitle').textContent = featuredGame.title;
     document.getElementById('featuredDescription').textContent = featuredGame.short[currentLanguage];
-    document.getElementById('featuredLink').href = featuredGame.url;
+    const featuredLink = document.getElementById('featuredLink');
+    featuredLink.href = featuredGame.url;
+    featuredLink.dataset.launchGame = featuredGame.id;
   }
 
   function renderStats() {
@@ -820,6 +1416,7 @@
     renderCatalog();
     if (currentOpenGameId) openGameDetails(currentOpenGameId, true);
 
+    renderAccount();
     if (persist) localStorage.setItem(STORAGE_KEYS.language, currentLanguage);
   }
 
@@ -861,7 +1458,7 @@
   function closeModal(modal) {
     if (typeof modal.close === 'function') modal.close();
     else modal.removeAttribute('open');
-    if (!settingsModal.open && !gameModal.open) document.body.classList.remove('modal-open');
+    if (!settingsModal.open && !gameModal.open && !accountModal.open) document.body.classList.remove('modal-open');
   }
 
   function openGameDetails(id, keepOpen = false) {
@@ -879,11 +1476,38 @@
     document.getElementById('gameModalGenres').textContent = game.genres[currentLanguage];
     document.getElementById('gameModalCreator').textContent = game.creator;
     renderGameDates(game.id);
-    document.getElementById('gameModalLink').href = game.url;
+    const modalLink = document.getElementById('gameModalLink');
+    modalLink.href = game.url;
+    modalLink.dataset.launchGame = game.id;
     if (!keepOpen) openModal(gameModal);
   }
 
+  document.addEventListener('click', event => {
+    const link = event.target.closest?.('[data-launch-game]');
+    if (!link || link.closest('#gamesGrid')) return;
+    const game = games.find(item => item.id === link.dataset.launchGame);
+    if (!game) return;
+    event.preventDefault();
+    launchGame(game);
+  });
+
   document.getElementById('openSettings').addEventListener('click', () => openModal(settingsModal));
+  openAccountButton.addEventListener('click', () => openModal(accountModal));
+  document.getElementById('closeAccountModal').addEventListener('click', () => closeModal(accountModal));
+  accountModal.addEventListener('click', event => {
+    if (event.target === accountModal) closeModal(accountModal);
+  });
+  accountModal.addEventListener('close', () => document.body.classList.remove('modal-open'));
+  document.querySelectorAll('[data-auth-mode]').forEach(button => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));
+  authForm.addEventListener('submit', submitAuthForm);
+  forgotPassword.addEventListener('click', sendPasswordReset);
+  recoveryForm.addEventListener('submit', submitRecoveryForm);
+  cancelRecovery.addEventListener('click', () => {
+    recoveryMode = false;
+    renderAccount();
+    setAuthMode('login');
+  });
+  signOutButton.addEventListener('click', signOut);
   document.getElementById('themeQuickToggle').addEventListener('click', () => {
     applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
     showToast(getCopy().settingsSaved);
@@ -936,7 +1560,7 @@
   });
 
   document.addEventListener('keydown', event => {
-    if (event.key === '/' && !settingsModal.open && !gameModal.open && document.activeElement !== searchInput) {
+    if (event.key === '/' && !settingsModal.open && !gameModal.open && !accountModal.open && document.activeElement !== searchInput) {
       event.preventDefault();
       searchInput.focus();
       document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -951,4 +1575,7 @@
   applyTheme(currentTheme, false);
   applyLanguage(currentLanguage, false);
   setActiveFilter('all');
+  setAuthMode('login');
+  renderAccount();
+  void initAuth();
 })();
