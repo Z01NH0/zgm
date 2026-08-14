@@ -42,6 +42,12 @@
       cloudReadyText: 'Blood Machine será sincronizado automaticamente quando aberto pelo portal.',
       cloudNeverSynced: 'Ainda não sincronizado nesta sessão',
       cloudLastSync: 'Última sincronização: {time}',
+      cloudBridgeWaiting: 'Aguardando o Blood Machine abrir pelo portal.',
+      cloudBridgeConnected: 'Blood Machine conectado ao portal.',
+      cloudSnapshotReceived: 'Save recebido do Blood Machine; enviando para a nuvem.',
+      cloudSyncNow: 'Sincronizar agora',
+      cloudOpenGameFirst: 'Abra o Blood Machine pelo portal antes de sincronizar.',
+      cloudBridgeAccountChanged: 'A conta mudou depois que o jogo foi aberto. Reabra o Blood Machine pelo portal.',
       authPasswordsMismatch: 'As senhas não são iguais.',
       authAccountCreated: 'Conta criada. Confira seu e-mail se a confirmação estiver ativada.',
       authSignedIn: 'Login realizado.',
@@ -160,6 +166,12 @@
       cloudReadyText: 'Blood Machine syncs automatically when launched through the portal.',
       cloudNeverSynced: 'Not synced in this session yet',
       cloudLastSync: 'Last sync: {time}',
+      cloudBridgeWaiting: 'Waiting for Blood Machine to be launched through the portal.',
+      cloudBridgeConnected: 'Blood Machine connected to the portal.',
+      cloudSnapshotReceived: 'Save received from Blood Machine; uploading to the cloud.',
+      cloudSyncNow: 'Sync now',
+      cloudOpenGameFirst: 'Launch Blood Machine through the portal before syncing.',
+      cloudBridgeAccountChanged: 'The account changed after the game was opened. Relaunch Blood Machine through the portal.',
       authPasswordsMismatch: 'The passwords do not match.',
       authAccountCreated: 'Account created. Check your email if confirmation is enabled.',
       authSignedIn: 'Signed in.',
@@ -724,7 +736,8 @@
   const root = document.documentElement;
   const STORAGE_BRIDGE_PROTOCOL = 'zoinho-storage-v1';
   const STORAGE_BRIDGE_MAX_BYTES = 512 * 1024;
-  const CLOUD_WRITE_DELAY = 650;
+  const CLOUD_WRITE_DELAY = 300;
+  const BRIDGE_SNAPSHOT_REQUEST_DELAY = 450;
   const storageBridgeGames = new Map([
     ['blood-machine', {
       origin: 'https://blood-machine.vercel.app',
@@ -747,16 +760,46 @@
   let authUser = null;
   let authMode = 'login';
   let authInitialized = false;
+  let authReadyResolved = false;
+  let resolveAuthReady;
+  const authReadyPromise = new Promise(resolve => { resolveAuthReady = resolve; });
   let recoveryMode = new URLSearchParams(location.hash.replace(/^#/, '')).get('type') === 'recovery' || new URLSearchParams(location.search).get('type') === 'recovery';
   const cloudWriteTimers = new Map();
   const cloudWritePending = new Map();
   const bridgeWindowBindings = new WeakMap();
+  const activeBridgeWindows = new Map();
+  const bridgeState = {
+    state: 'waiting',
+    gameId: null,
+    lastEventAt: null,
+    error: null
+  };
   const cloudState = {
     state: 'idle',
     lastSyncAt: null,
     lastGameId: null,
     error: null
   };
+
+  function settleAuthReady() {
+    if (authReadyResolved) return;
+    authReadyResolved = true;
+    resolveAuthReady?.();
+  }
+
+  async function waitForAuthReady() {
+    if (authInitialized) return;
+    await authReadyPromise;
+  }
+
+  function setBridgeState(state, gameId = null, error = null) {
+    bridgeState.state = state;
+    bridgeState.gameId = gameId || bridgeState.gameId;
+    bridgeState.error = error || null;
+    bridgeState.lastEventAt = new Date().toISOString();
+    renderCloudState();
+  }
+
 
   function emptyBridgeCache() {
     return { version: 2, guest: {}, users: {} };
@@ -894,33 +937,64 @@
     return { snapshot: cloudRowToSnapshot(gameId, row), error: null };
   }
 
+  async function probeCloudAccess(expectedUserId = authUser?.id || null) {
+    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId) return false;
+    const { error } = await supabaseClient
+      .from('game_saves')
+      .select('game_id')
+      .eq('user_id', expectedUserId)
+      .limit(1);
+    if (authUser?.id !== expectedUserId) return false;
+    if (error) {
+      console.warn('[ZOINHO Cloud] Banco indisponível para a conta autenticada.', error);
+      setCloudState('error', 'blood-machine', error);
+      return false;
+    }
+    console.info('[ZOINHO Cloud] Banco acessível para a conta autenticada.');
+    return true;
+  }
+
   async function upsertCloudSnapshot(gameId, snapshot, expectedUserId = authUser?.id || null) {
     if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId) return false;
     const config = storageBridgeGames.get(gameId);
     if (!config) return false;
 
     setCloudState('syncing', gameId);
-    const { data, error } = await supabaseClient
-      .from('game_saves')
-      .upsert({
-        user_id: expectedUserId,
-        game_id: gameId,
-        save_version: config.saveVersion || 1,
-        save_data: snapshot.storage,
-        client_updated_at: snapshot.clientUpdatedAt || new Date().toISOString()
-      }, { onConflict: 'user_id,game_id' })
-      .select('updated_at, revision')
-      .limit(1);
+    let lastError = null;
 
-    if (error) {
-      console.warn('[ZOINHO Cloud] Falha ao salvar', gameId, error);
-      setCloudState('error', gameId, error);
-      return false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { data, error } = await supabaseClient
+        .from('game_saves')
+        .upsert({
+          user_id: expectedUserId,
+          game_id: gameId,
+          save_version: config.saveVersion || 1,
+          save_data: snapshot.storage,
+          client_updated_at: snapshot.clientUpdatedAt || new Date().toISOString()
+        }, { onConflict: 'user_id,game_id' })
+        .select('updated_at, revision')
+        .limit(1);
+
+      if (!error) {
+        const syncedAt = data?.[0]?.updated_at || new Date().toISOString();
+        setCloudState('ok', gameId, null, syncedAt);
+        console.info('[ZOINHO Cloud] Save gravado:', gameId, { revision: data?.[0]?.revision, updatedAt: syncedAt });
+        return true;
+      }
+
+      lastError = error;
+      console.warn(`[ZOINHO Cloud] Falha ao salvar ${gameId} (tentativa ${attempt}/3)`, error);
+      const status = Number(error?.status || 0);
+      const message = String(error?.message || '').toLowerCase();
+      const nonRetryable = status === 400 || status === 401 || status === 403 ||
+        message.includes('row-level security') || message.includes('permission') ||
+        message.includes('constraint') || message.includes('violates');
+      if (nonRetryable || attempt === 3) break;
+      await new Promise(resolve => setTimeout(resolve, 250 * attempt));
     }
 
-    const syncedAt = data?.[0]?.updated_at || new Date().toISOString();
-    setCloudState('ok', gameId, null, syncedAt);
-    return true;
+    setCloudState('error', gameId, lastError);
+    return false;
   }
 
   function scheduleCloudSnapshot(gameId, snapshot) {
@@ -957,6 +1031,7 @@
 
     const chosen = newestSnapshot(localSnapshot, cloudSnapshot);
     if (chosen) writeCachedSnapshot(gameId, chosen, authUser.id);
+    if (!chosen) setBridgeState('connected', gameId);
 
     if (chosen === localSnapshot && localSnapshot && (!cloudSnapshot || snapshotTimestamp(localSnapshot) > snapshotTimestamp(cloudSnapshot))) {
       scheduleCloudSnapshot(gameId, localSnapshot);
@@ -974,7 +1049,13 @@
     const source = event.source;
 
     if (message.type === 'ready') {
-      bridgeWindowBindings.set(source, { gameId: message.gameId, userId: authUser?.id || null });
+      // A v1 podia vincular a aba como guest antes de a sessão do Supabase terminar de restaurar.
+      await waitForAuthReady();
+      const userId = authUser?.id || null;
+      bridgeWindowBindings.set(source, { gameId: message.gameId, userId });
+      activeBridgeWindows.set(message.gameId, { source, userId, origin: config.origin });
+      setBridgeState('connected', message.gameId);
+
       const snapshot = await resolveInitialSnapshot(message.gameId);
       try {
         source.postMessage({
@@ -983,34 +1064,70 @@
           gameId: message.gameId,
           snapshot: snapshot || null
         }, config.origin);
+
+        setTimeout(() => {
+          const active = activeBridgeWindows.get(message.gameId);
+          if (!active || active.source !== source || active.userId !== (authUser?.id || null)) return;
+          try {
+            source.postMessage({ protocol: STORAGE_BRIDGE_PROTOCOL, type: 'request-snapshot', gameId: message.gameId }, config.origin);
+          } catch {}
+        }, BRIDGE_SNAPSHOT_REQUEST_DELAY);
       } catch (error) {
         console.warn('[ZOINHO Bridge] A aba do jogo foi fechada durante a sincronização.', error);
+        setBridgeState('error', message.gameId, error);
       }
       return;
     }
 
     if (message.type === 'snapshot') {
+      await waitForAuthReady();
       const binding = bridgeWindowBindings.get(source);
       const currentUserId = authUser?.id || null;
       if (!binding || binding.gameId !== message.gameId || binding.userId !== currentUserId) {
-        console.warn('[ZOINHO Bridge] Snapshot ignorado porque a conta mudou desde a abertura do jogo. Reabra o jogo pelo portal.');
+        console.warn('[ZOINHO Bridge] Snapshot ignorado porque a conta mudou desde a abertura do jogo. Reabra o jogo pelo portal.', { binding, currentUserId });
+        setBridgeState('account-changed', message.gameId);
         return;
       }
 
       const snapshot = sanitizeBridgeSnapshot(message.gameId, message.snapshot);
       if (!snapshot) {
         console.warn('[ZOINHO Bridge] Snapshot rejeitado para', message.gameId);
+        setBridgeState('error', message.gameId, new Error('Snapshot inválido ou grande demais.'));
         return;
       }
 
       const userId = authUser?.id || null;
       const cached = writeCachedSnapshot(message.gameId, snapshot, userId);
+      setBridgeState('snapshot', message.gameId);
       if (cached && authUser) scheduleCloudSnapshot(message.gameId, snapshot);
 
       try {
         source.postMessage({ protocol: STORAGE_BRIDGE_PROTOCOL, type: 'ack', gameId: message.gameId }, config.origin);
       } catch {}
-      console.info('[ZOINHO Bridge] Save recebido:', message.gameId);
+      console.info('[ZOINHO Bridge] Save recebido:', message.gameId, snapshot.storage);
+    }
+  }
+
+  function requestActiveGameSnapshot(gameId = 'blood-machine') {
+    const active = activeBridgeWindows.get(gameId);
+    if (!active || !active.source || active.source.closed) {
+      activeBridgeWindows.delete(gameId);
+      showToast(getCopy().cloudOpenGameFirst);
+      setBridgeState('waiting', gameId);
+      return false;
+    }
+    if (active.userId !== (authUser?.id || null)) {
+      showToast(getCopy().cloudBridgeAccountChanged);
+      setBridgeState('account-changed', gameId);
+      return false;
+    }
+    try {
+      active.source.postMessage({ protocol: STORAGE_BRIDGE_PROTOCOL, type: 'request-snapshot', gameId }, active.origin);
+      setBridgeState('connected', gameId);
+      return true;
+    } catch (error) {
+      setBridgeState('error', gameId, error);
+      return false;
     }
   }
 
@@ -1055,6 +1172,8 @@
   const cloudStateText = document.getElementById('cloudStateText');
   const bloodMachineCloudDetail = document.getElementById('bloodMachineCloudDetail');
   const bloodMachineCloudIcon = document.getElementById('bloodMachineCloudIcon');
+  const bridgeConnectionDetail = document.getElementById('bridgeConnectionDetail');
+  const cloudSyncNowButton = document.getElementById('cloudSyncNowButton');
 
   let activeFilter = 'all';
   let currentLanguage = localStorage.getItem(STORAGE_KEYS.language) || 'pt-BR';
@@ -1107,14 +1226,38 @@
           ? copy.cloudError
           : copy.cloudReady;
 
-    if (state === 'error') cloudStateText.textContent = copy.cloudLoadError;
-    else cloudStateText.textContent = copy.cloudReadyText;
+    if (state === 'error') {
+      const detail = cloudState.error?.message || cloudState.error?.details || cloudState.error?.hint || '';
+      cloudStateText.textContent = detail ? `${copy.cloudLoadError} (${detail})` : copy.cloudLoadError;
+    } else if (bridgeState.state === 'account-changed') {
+      cloudStateText.textContent = copy.cloudBridgeAccountChanged;
+    } else if (bridgeState.state === 'snapshot') {
+      cloudStateText.textContent = copy.cloudSnapshotReceived;
+    } else if (bridgeState.state === 'connected') {
+      cloudStateText.textContent = copy.cloudBridgeConnected;
+    } else {
+      cloudStateText.textContent = copy.cloudBridgeWaiting;
+    }
+
+    if (bridgeConnectionDetail) {
+      bridgeConnectionDetail.textContent = bridgeState.state === 'snapshot'
+        ? copy.cloudSnapshotReceived
+        : bridgeState.state === 'connected'
+          ? copy.cloudBridgeConnected
+          : bridgeState.state === 'account-changed'
+            ? copy.cloudBridgeAccountChanged
+            : copy.cloudBridgeWaiting;
+    }
 
     if (cloudState.lastSyncAt) {
       const date = new Date(cloudState.lastSyncAt);
       const formatted = Number.isNaN(date.getTime()) ? cloudState.lastSyncAt : new Intl.DateTimeFormat(currentLanguage, { dateStyle: 'short', timeStyle: 'short' }).format(date);
       bloodMachineCloudDetail.textContent = copy.cloudLastSync.replace('{time}', formatted);
       bloodMachineCloudIcon.textContent = '✓';
+    } else if (state === 'error') {
+      const detail = cloudState.error?.message || cloudState.error?.details || cloudState.error?.hint || 'erro desconhecido';
+      bloodMachineCloudDetail.textContent = `Falha no Supabase: ${detail}`;
+      bloodMachineCloudIcon.textContent = '!';
     } else {
       bloodMachineCloudDetail.textContent = copy.cloudNeverSynced;
       bloodMachineCloudIcon.textContent = '☁';
@@ -1155,23 +1298,32 @@
   }
 
   function handleSession(session, eventName = '') {
+    const wasInitialized = authInitialized;
     const previousId = authUser?.id || null;
     authUser = session?.user || null;
     const currentId = authUser?.id || null;
     if (previousId !== currentId) {
       clearCloudQueue();
       resetCloudSessionState();
+      if (wasInitialized) {
+        for (const [gameId, active] of activeBridgeWindows) {
+          if (active.userId !== currentId) setBridgeState('account-changed', gameId);
+        }
+      }
     }
     if (eventName === 'PASSWORD_RECOVERY') recoveryMode = true;
     if (eventName === 'SIGNED_OUT') recoveryMode = false;
     authInitialized = true;
+    settleAuthReady();
     renderAccount();
+    if (authUser) void probeCloudAccess(authUser.id);
   }
 
   async function initAuth() {
     if (!supabaseClient) {
       console.error('[ZOINHO Auth] Supabase JS/configuração não carregados.');
       authInitialized = true;
+      settleAuthReady();
       renderAccount();
       return;
     }
@@ -1508,6 +1660,7 @@
     setAuthMode('login');
   });
   signOutButton.addEventListener('click', signOut);
+  cloudSyncNowButton?.addEventListener('click', () => requestActiveGameSnapshot('blood-machine'));
   document.getElementById('themeQuickToggle').addEventListener('click', () => {
     applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
     showToast(getCopy().settingsSaved);
