@@ -789,26 +789,56 @@ html[data-theme="light"] .icon-moon { display: none; }
 .account-profile-row p { margin: 0; color: var(--text-faint); font-size: 9px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .account-status-dot { display: inline-flex; align-items: center; gap: 6px; color: var(--success); font-size: 9px; font-weight: 900; letter-spacing: .12em; }
 .account-status-dot i { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 12%, transparent); }
-.cloud-card { margin-top: 24px; padding: 18px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
-.cloud-card-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
-.cloud-card-head h3 { margin: 5px 0 0; font-size: 17px; }
-.cloud-card > p { margin: 12px 0 0; color: var(--text-soft); font-size: 12px; line-height: 1.6; }
-.cloud-state { display: inline-flex; min-height: 26px; align-items: center; padding: 0 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-faint); background: var(--bg-elevated); font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-.cloud-state[data-state="synced"] { color: var(--success); border-color: color-mix(in srgb, var(--success) 30%, transparent); background: color-mix(in srgb, var(--success) 9%, transparent); }
-.cloud-state[data-state="ready"] { color: var(--success); border-color: color-mix(in srgb, var(--success) 18%, transparent); background: color-mix(in srgb, var(--success) 5%, transparent); }
-.cloud-state[data-state="checking"] { color: var(--text-soft); border-color: var(--line-strong); background: var(--surface-hover); }
-.cloud-state[data-state="syncing"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: var(--accent-soft); }
-.cloud-state[data-state="error"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: var(--accent-soft); }
-.cloud-game-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding-top: 15px; border-top: 1px solid var(--line); }
-.cloud-game-row > div { min-width: 0; display: grid; }
-.cloud-game-row strong { font-size: 12px; }
-.cloud-game-row small { margin-top: 4px; color: var(--text-faint); font-size: 10px; }
-.cloud-game-row > span { font-size: 22px; }
+.cloud-sync-section { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+.cloud-sync-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.cloud-sync-head h3 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+.cloud-sync-search {
+  height: 40px; display: flex; align-items: center; gap: 9px; margin-top: 13px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 10px; color: var(--text-faint); background: var(--surface);
+}
+.cloud-sync-search .icon { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.cloud-sync-search input {
+  width: 100%; min-width: 0; border: 0; outline: 0; color: var(--text); background: transparent;
+  font: inherit; font-size: 11px; font-weight: 700;
+}
+.cloud-sync-search input::placeholder { color: var(--text-faint); font-weight: 650; }
+.cloud-sync-games { display: grid; margin-top: 10px; border-top: 1px solid var(--line); }
+.cloud-sync-game {
+  min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 9px 2px; border-bottom: 1px solid var(--line);
+}
+.cloud-sync-game > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.cloud-sync-game-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+.cloud-sync-mark { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; font-size: 13px; font-weight: 1000; }
+.cloud-sync-mark.is-synced {
+  color: var(--success); background: color-mix(in srgb, var(--success) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--success) 24%, transparent);
+}
+.cloud-sync-mark.is-unsynced {
+  color: var(--accent); background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+.cloud-info-button {
+  width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%;
+  color: var(--text-soft); background: transparent; cursor: pointer; font: 900 11px/1 Georgia, serif; transition: .16s ease;
+}
+.cloud-info-button:hover { color: var(--text); border-color: var(--line-strong); background: var(--surface-hover); transform: translateY(-1px); }
+.cloud-sync-empty { margin: 14px 0 4px; color: var(--text-faint); text-align: center; font-size: 10px; }
+.cloud-sync-now { margin-top: 12px; width: 100%; justify-content: center; }
+.cloud-info-panel { width: min(100%, 520px); }
+.cloud-info-body { padding-top: 20px; }
+.cloud-info-body > h3 { margin: 0 0 14px; font-size: 17px; }
+.cloud-info-grid { display: grid; gap: 0; margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.cloud-info-grid > div { display: grid; grid-template-columns: minmax(140px, .9fr) 1.1fr; gap: 16px; padding: 11px 13px; border-bottom: 1px solid var(--line); }
+.cloud-info-grid > div:last-child { border-bottom: 0; }
+.cloud-info-grid dt { color: var(--text-faint); font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .07em; }
+.cloud-info-grid dd { margin: 0; color: var(--text-soft); text-align: right; font-size: 10px; font-weight: 750; overflow-wrap: anywhere; }
+#cloudInfoStatusValue[data-state="synced"] { color: var(--success); }
+#cloudInfoStatusValue[data-state="unsynced"] { color: var(--accent); }
+.cloud-info-error dd { color: var(--accent); }
 .account-footer { border-top: 1px solid var(--line); margin-top: 24px; }
 
 @media (max-width: 860px) {
   .account-button { min-width: 42px; width: 42px; padding: 0; justify-content: center; }
   .account-button-copy { display: none; }
 }
-.cloud-game-row #bridgeConnectionDetail { margin-top: 7px; max-width: 520px; line-height: 1.45; }
-.cloud-sync-now { margin-top: 14px; width: 100%; justify-content: center; }
