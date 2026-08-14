@@ -257,7 +257,8 @@
           <div class="cloud-card">
             <div class="cloud-card-head"><div><span class="section-kicker">CLOUD SAVE</span><h3 data-i18n="cloudSaveTitle">Sincronização</h3></div><span class="cloud-state" id="cloudStateBadge" data-state="idle" data-i18n="cloudReady">Pronto</span></div>
             <p id="cloudStateText" data-i18n="cloudReadyText">Blood Machine será sincronizado automaticamente quando aberto pelo portal.</p>
-            <div class="cloud-game-row"><div><strong>Blood Machine</strong><small id="bloodMachineCloudDetail" data-i18n="cloudNeverSynced">Ainda não sincronizado nesta sessão</small></div><span id="bloodMachineCloudIcon" aria-hidden="true">☁</span></div>
+            <div class="cloud-game-row"><div><strong>Blood Machine</strong><small id="bloodMachineCloudDetail" data-i18n="cloudNeverSynced">Ainda não sincronizado nesta sessão</small><small id="bridgeConnectionDetail">Aguardando o Blood Machine abrir pelo portal.</small></div><span id="bloodMachineCloudIcon" aria-hidden="true">☁</span></div>
+            <button class="button button-ghost cloud-sync-now" id="cloudSyncNowButton" type="button" data-i18n="cloudSyncNow">Sincronizar agora</button>
           </div>
         </section>
         <div class="modal-footer account-footer">
@@ -335,7 +336,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js"></script>
-  <script src="app.js"></script>
+  <script src="supabase-config.js?v=cloud-1.1"></script>
+  <script src="app.js?v=cloud-1.1"></script>
 </body>
 </html>
