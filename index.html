@@ -10,7 +10,7 @@
   <link rel="icon" href="/favicon-zoinho-v2.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-32x32.png?v=2" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=cloud-1.3" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -254,16 +254,47 @@
             <span class="account-profile-avatar" id="accountProfileAvatar">Z</span>
             <div><span class="account-status-dot"><i></i><span data-i18n="accountConnected">CONECTADO</span></span><h3 id="accountEmailDisplay">—</h3><p id="accountUserId">—</p></div>
           </div>
-          <div class="cloud-card">
-            <div class="cloud-card-head"><div><span class="section-kicker">CLOUD SAVE</span><h3 data-i18n="cloudSaveTitle">Sincronização</h3></div><span class="cloud-state" id="cloudStateBadge" data-state="idle" data-i18n="cloudReady">Pronto</span></div>
-            <p id="cloudStateText" data-i18n="cloudReadyText">Blood Machine será sincronizado automaticamente quando aberto pelo portal.</p>
-            <div class="cloud-game-row"><div><strong>Blood Machine</strong><small id="bloodMachineCloudDetail" data-i18n="cloudNeverSynced">Ainda não sincronizado nesta sessão</small><small id="bridgeConnectionDetail">Aguardando o Blood Machine abrir pelo portal.</small></div><span id="bloodMachineCloudIcon" aria-hidden="true">☁</span></div>
+          <section class="cloud-sync-section" aria-labelledby="cloudSyncTitle">
+            <div class="cloud-sync-head">
+              <h3 id="cloudSyncTitle" data-i18n="cloudSectionTitle">Sincronização na Nuvem</h3>
+            </div>
+            <label class="cloud-sync-search" for="cloudGameSearch">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+              <input id="cloudGameSearch" type="search" autocomplete="off" data-i18n-placeholder="cloudSearchPlaceholder" placeholder="Pesquisar jogo..." />
+            </label>
+            <div class="cloud-sync-games" id="cloudGamesList" aria-live="polite"></div>
             <button class="button button-ghost cloud-sync-now" id="cloudSyncNowButton" type="button" data-i18n="cloudSyncNow">Sincronizar agora</button>
-          </div>
+          </section>
         </section>
         <div class="modal-footer account-footer">
           <button class="button button-ghost" id="signOutButton" type="button" data-i18n="accountLogout">Sair da conta</button>
         </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal cloud-info-modal" id="cloudGameInfoModal" aria-labelledby="cloudInfoTitle">
+    <div class="modal-panel cloud-info-panel">
+      <div class="modal-header">
+        <div><span class="section-kicker" data-i18n="cloudSectionTitle">Sincronização na Nuvem</span><h2 id="cloudInfoTitle" data-i18n="cloudInfoTitle">Informações da sincronização</h2></div>
+        <button class="icon-button close-modal" id="closeCloudGameInfoModal" type="button" aria-label="Fechar">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="cloud-info-body">
+        <h3 id="cloudInfoGameName">—</h3>
+        <dl class="cloud-info-grid">
+          <div><dt data-i18n="cloudInfoStatus">Status</dt><dd id="cloudInfoStatusValue" data-state="unsynced">—</dd></div>
+          <div><dt data-i18n="cloudInfoLastSync">Última sincronização</dt><dd id="cloudInfoLastSyncValue">—</dd></div>
+          <div><dt data-i18n="cloudInfoRevision">Revisão do save</dt><dd id="cloudInfoRevisionValue">—</dd></div>
+          <div><dt data-i18n="cloudInfoSaveVersion">Versão do save</dt><dd id="cloudInfoSaveVersionValue">—</dd></div>
+          <div><dt data-i18n="cloudInfoClientUpdate">Última alteração no jogo</dt><dd id="cloudInfoClientUpdateValue">—</dd></div>
+          <div><dt data-i18n="cloudInfoBridge">Conexão com o jogo</dt><dd id="cloudInfoBridgeValue">—</dd></div>
+          <div class="cloud-info-error" id="cloudInfoErrorRow" hidden><dt data-i18n="cloudInfoError">Último erro</dt><dd id="cloudInfoErrorValue">—</dd></div>
+        </dl>
+      </div>
+      <div class="modal-footer">
+        <button class="button button-ghost" id="cloudInfoCloseButton" type="button" data-i18n="cloudInfoClose">Fechar</button>
       </div>
     </div>
   </dialog>
@@ -336,7 +367,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=cloud-1.2"></script>
-  <script src="app.js?v=cloud-1.2"></script>
+  <script src="supabase-config.js?v=cloud-1.3"></script>
+  <script src="app.js?v=cloud-1.3"></script>
 </body>
 </html>
