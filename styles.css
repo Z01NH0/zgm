@@ -808,3 +808,5 @@ html[data-theme="light"] .icon-moon { display: none; }
   .account-button { min-width: 42px; width: 42px; padding: 0; justify-content: center; }
   .account-button-copy { display: none; }
 }
+.cloud-game-row #bridgeConnectionDetail { margin-top: 7px; max-width: 520px; line-height: 1.45; }
+.cloud-sync-now { margin-top: 14px; width: 100%; justify-content: center; }
