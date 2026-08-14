@@ -20,6 +20,7 @@ create table if not exists public.game_saves (
 alter table public.game_saves enable row level security;
 
 -- O navegador autenticado precisa das permissões SQL, e o RLS limita as linhas.
+grant usage on schema public to authenticated;
 grant select, insert, update, delete on table public.game_saves to authenticated;
 revoke all on table public.game_saves from anon;
 
