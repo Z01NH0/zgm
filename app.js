@@ -1,13 +1,15 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.7.0';
+  const ZOINHO_CLOUD_BUILD = '1.7.1';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
   const STORAGE_KEYS = {
     theme: 'zoinho-games-theme',
     language: 'zoinho-games-language',
+    fontSize: 'zoinho-games-font-size-v1',
+    fontFamily: 'zoinho-games-font-family-v1',
     bridgeCache: 'zoinho-games-storage-bridge-v2',
     bridgeCacheLegacy: 'zoinho-games-storage-bridge-v1',
     localProfiles: 'zoinho-games-local-profiles-v1',
@@ -192,6 +194,20 @@
       lightThemeSub: 'Tema claro',
       language: 'Idioma',
       languageText: 'Altere o idioma da interface.',
+      typography: 'Tipografia',
+      typographyText: 'Ajuste o tamanho e o estilo das fontes do portal.',
+      fontSize: 'Tamanho da fonte',
+      fontStyle: 'Estilo da fonte',
+      fontSizeCompact: 'Compacta',
+      fontSizeNormal: 'Padrão',
+      fontSizeComfortable: 'Confortável',
+      fontSizeLarge: 'Grande',
+      fontModern: 'Moderna e neutra',
+      fontReadable: 'Leitura confortável',
+      fontGeometric: 'Geométrica e forte',
+      fontClassic: 'Clássica e elegante',
+      fontRetro: 'Retrô e monoespaçada',
+      fontFantasy: 'Fantasia caótica',
       reset: 'Restaurar padrão',
       done: 'Concluído',
       platform: 'Plataforma',
@@ -383,6 +399,20 @@
       lightThemeSub: 'Light theme',
       language: 'Language',
       languageText: 'Change the interface language.',
+      typography: 'Typography',
+      typographyText: 'Adjust the portal font size and visual style.',
+      fontSize: 'Font size',
+      fontStyle: 'Font style',
+      fontSizeCompact: 'Compact',
+      fontSizeNormal: 'Default',
+      fontSizeComfortable: 'Comfortable',
+      fontSizeLarge: 'Large',
+      fontModern: 'Modern and neutral',
+      fontReadable: 'Comfortable reading',
+      fontGeometric: 'Geometric and bold',
+      fontClassic: 'Classic and elegant',
+      fontRetro: 'Retro and monospaced',
+      fontFantasy: 'Chaotic fantasy',
       reset: 'Restore defaults',
       done: 'Done',
       platform: 'Platform',
@@ -880,6 +910,8 @@
   let reviewDialogGameId = null;
   let reviewDialogOwnReview = null;
   let reviewDraftRating = 0;
+  let reviewEditorMode = 'new';
+  let reviewDialogPublicRows = [];
   let adminEditingGameId = null;
   let adminGamesCache = [];
   let adminReviewsCache = [];
@@ -972,20 +1004,20 @@
       ratingEmpty: 'No ratings yet', ratingCount: n => `${n} rating${n === 1 ? '' : 's'}`,
       rateGame: 'Rate this game', reviewsTitle: 'Community reviews', yourReview: 'Your review',
       commentPlaceholder: 'What did you think of the game? (optional, up to 800 characters)',
-      publishReview: 'Publish review', updateReview: 'Update review', deleteReview: 'Delete my review',
+      publishReview: 'Publish review', updateReview: 'Save changes', deleteReview: 'Delete', editReview: 'Edit', cancelEdit: 'Cancel edit', ownReviewBadge: 'Your review', editingReview: 'Editing your review',
       loginToReview: 'Sign in to rate and comment.', loginAction: 'Sign in or create account',
       reviewSaved: 'Review saved.', reviewDeleted: 'Review deleted.', reviewError: 'Could not save this review.',
       reviewDeleteConfirm: 'Delete your review for this game?', profileRequired: 'Choose a nickname in your account profile before posting a review.', reviewHidden: 'This review was hidden by moderation. You can delete it, but it cannot be edited while hidden.', verified: 'Verified player', edited: 'edited',
-      noComments: 'No community reviews yet. Someone has to be first.', ratingAria: value => `${value.toFixed(1)} out of 5 stars`
+      noComments: 'No community reviews yet. Someone has to be first.', noOtherComments: 'No other community reviews yet.', ratingAria: value => `${value.toFixed(1)} out of 5 stars`
     } : {
       ratingEmpty: 'Sem avaliações', ratingCount: n => `${n} avaliação${n === 1 ? '' : 'ões'}`,
       rateGame: 'Avaliar este jogo', reviewsTitle: 'Avaliações da comunidade', yourReview: 'Sua avaliação',
       commentPlaceholder: 'O que você achou do jogo? (opcional, até 800 caracteres)',
-      publishReview: 'Publicar avaliação', updateReview: 'Atualizar avaliação', deleteReview: 'Excluir minha avaliação',
+      publishReview: 'Publicar avaliação', updateReview: 'Salvar alterações', deleteReview: 'Excluir', editReview: 'Editar', cancelEdit: 'Cancelar edição', ownReviewBadge: 'Sua avaliação', editingReview: 'Editando sua avaliação',
       loginToReview: 'Entre em uma conta para avaliar e comentar.', loginAction: 'Entrar ou criar conta',
       reviewSaved: 'Avaliação salva.', reviewDeleted: 'Avaliação excluída.', reviewError: 'Não foi possível salvar esta avaliação.',
       reviewDeleteConfirm: 'Excluir sua avaliação deste jogo?', profileRequired: 'Escolha um nickname no seu perfil antes de publicar uma avaliação.', reviewHidden: 'Esta avaliação foi ocultada pela moderação. Você pode excluí-la, mas não editá-la enquanto estiver oculta.', verified: 'Jogador verificado', edited: 'editado',
-      noComments: 'Ainda não há avaliações da comunidade. Alguém precisa inaugurar a seção.', ratingAria: value => `${value.toFixed(1).replace('.', ',')} de 5 estrelas`
+      noComments: 'Ainda não há avaliações da comunidade. Alguém precisa inaugurar a seção.', noOtherComments: 'Ainda não há outras avaliações da comunidade.', ratingAria: value => `${value.toFixed(1).replace('.', ',')} de 5 estrelas`
     };
   }
 
@@ -1708,6 +1740,8 @@
   const gameModal = document.getElementById('gameModal');
   const languageSelect = document.getElementById('languageSelect');
   const themeInputs = [...document.querySelectorAll('input[name="theme"]')];
+  const fontSizeInputs = [...document.querySelectorAll('input[name="fontSize"]')];
+  const fontFamilyInputs = [...document.querySelectorAll('input[name="fontFamily"]')];
   const searchInput = document.getElementById('gameSearch');
   const filterButtons = [...document.querySelectorAll('.filter-chip')];
   const gamesGrid = document.getElementById('gamesGrid');
@@ -1769,6 +1803,8 @@
   let activeFilter = 'all';
   let currentLanguage = localStorage.getItem(STORAGE_KEYS.language) || 'pt-BR';
   let currentTheme = localStorage.getItem(STORAGE_KEYS.theme) || 'dark';
+  let currentFontSize = localStorage.getItem(STORAGE_KEYS.fontSize) || 'normal';
+  let currentFontFamily = localStorage.getItem(STORAGE_KEYS.fontFamily) || 'inter';
   let currentOpenGameId = null;
   let gameDates = {};
   let datesLoaded = false;
@@ -2525,6 +2561,21 @@
     }
   }
 
+  function applyTypography(fontSize = currentFontSize, fontFamily = currentFontFamily, persist = true) {
+    const allowedSizes = new Set(['compact', 'normal', 'comfortable', 'large']);
+    const allowedFamilies = new Set(['inter', 'open-sans', 'montserrat', 'georgia', 'courier', 'papyrus']);
+    currentFontSize = allowedSizes.has(fontSize) ? fontSize : 'normal';
+    currentFontFamily = allowedFamilies.has(fontFamily) ? fontFamily : 'inter';
+    root.dataset.fontSize = currentFontSize;
+    root.dataset.fontFamily = currentFontFamily;
+    fontSizeInputs.forEach(input => { input.checked = input.value === currentFontSize; });
+    fontFamilyInputs.forEach(input => { input.checked = input.value === currentFontFamily; });
+    if (persist) {
+      localStorage.setItem(STORAGE_KEYS.fontSize, currentFontSize);
+      localStorage.setItem(STORAGE_KEYS.fontFamily, currentFontFamily);
+    }
+  }
+
   function applyTheme(theme, persist = true) {
     currentTheme = theme === 'light' ? 'light' : 'dark';
     root.dataset.theme = currentTheme;
@@ -2594,36 +2645,69 @@
     if (avgCount) avgCount.textContent = stats.count ? copy.ratingCount(stats.count) : copy.ratingEmpty;
   }
 
+  function reviewAvatarMarkup(nick, avatar) {
+    const safeNick = String(nick || 'Jogador').trim() || 'Jogador';
+    const image = String(avatar || '');
+    const initial = [...safeNick][0]?.toUpperCase() || 'J';
+    const avatarStyle = image.startsWith('data:image/') ? ` style="background-image:url('${escapeAttr(image)}')"` : '';
+    return { nick: safeNick, avatarStyle, avatarText: avatarStyle ? '' : escapeHtml(initial) };
+  }
+
+  function renderOwnReviewSpotlight(publicRows = []) {
+    const root = document.getElementById('ownReviewSpotlight');
+    if (!root) return;
+    const own = reviewDialogOwnReview;
+    if (!authUser || !own || reviewEditorMode === 'edit') {
+      root.hidden = true;
+      root.innerHTML = '';
+      return;
+    }
+    const copy = communityCopy();
+    const publicOwn = publicRows.find(row => row.user_id === authUser.id || row.id === own.id) || null;
+    const profile = getAccountProfile();
+    const avatarInfo = reviewAvatarMarkup(publicOwn?.nickname || profile?.nickname || fallbackDisplayName(), publicOwn?.avatar_data_url || profile?.avatarDataUrl || '');
+    const edited = own.updated_at && own.created_at && Math.abs(new Date(own.updated_at) - new Date(own.created_at)) > 1500 ? ` · ${copy.edited}` : '';
+    const hiddenNotice = own.is_hidden ? `<p class="review-moderation-notice own-review-moderation">${escapeHtml(copy.reviewHidden)}</p>` : '';
+    root.innerHTML = `<article class="community-review is-own-review"><div class="community-review-avatar"${avatarInfo.avatarStyle}>${avatarInfo.avatarText}</div><div class="own-review-content"><div class="own-review-topline"><span class="own-review-badge">★ ${escapeHtml(copy.ownReviewBadge)}</span><span class="community-review-date">${escapeHtml(formatReviewDate(own.updated_at || own.created_at))}${escapeHtml(edited)}</span></div><div class="community-review-headline"><div><span class="community-review-user">${escapeHtml(avatarInfo.nick)}</span>${publicOwn?.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}<div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(own.rating)||0))}">${starFillMarkup(Number(own.rating)||0)}</div></div></div>${own.comment ? `<p class="community-review-comment">${escapeHtml(own.comment)}</p>` : ''}${hiddenNotice}<div class="own-review-actions">${own.is_hidden ? '' : `<button class="admin-mini-btn" type="button" data-edit-own-review>${escapeHtml(copy.editReview)}</button>`}<button class="admin-mini-btn danger" type="button" data-delete-own-review>${escapeHtml(copy.deleteReview)}</button></div></div></article>`;
+    root.hidden = false;
+  }
+
   function renderCommunityReviews(rows = []) {
+    reviewDialogPublicRows = Array.isArray(rows) ? rows : [];
     const root = document.getElementById('communityReviewList');
     if (!root) return;
     const copy = communityCopy();
-    if (!rows.length) {
-      root.innerHTML = `<div class="community-review-empty">${escapeHtml(copy.noComments)}</div>`;
+    const visibleRows = authUser && reviewDialogOwnReview ? rows.filter(row => row.user_id !== authUser.id && row.id !== reviewDialogOwnReview.id) : rows;
+    renderOwnReviewSpotlight(rows);
+    if (!visibleRows.length) {
+      root.innerHTML = `<div class="community-review-empty">${escapeHtml(reviewDialogOwnReview ? copy.noOtherComments : copy.noComments)}</div>`;
       return;
     }
-    root.innerHTML = rows.map(row => {
-      const nick = String(row.nickname || 'Jogador').trim() || 'Jogador';
-      const avatar = String(row.avatar_data_url || '');
-      const initial = [...nick][0]?.toUpperCase() || 'J';
-      const avatarStyle = avatar.startsWith('data:image/') ? ` style="background-image:url('${escapeAttr(avatar)}')"` : '';
-      const avatarText = avatarStyle ? '' : escapeHtml(initial);
+    root.innerHTML = visibleRows.map(row => {
+      const avatarInfo = reviewAvatarMarkup(row.nickname, row.avatar_data_url);
       const edited = row.updated_at && row.created_at && Math.abs(new Date(row.updated_at) - new Date(row.created_at)) > 1500 ? ` · ${copy.edited}` : '';
-      return `<article class="community-review"><div class="community-review-avatar"${avatarStyle}>${avatarText}</div><div><div class="community-review-headline"><div><span class="community-review-user">${escapeHtml(nick)}</span>${row.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}<div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(row.rating)||0))}">${starFillMarkup(Number(row.rating)||0)}</div></div><span class="community-review-date">${escapeHtml(formatReviewDate(row.updated_at || row.created_at))}${escapeHtml(edited)}</span></div>${row.comment ? `<p class="community-review-comment">${escapeHtml(row.comment)}</p>` : ''}</div></article>`;
+      return `<article class="community-review"><div class="community-review-avatar"${avatarInfo.avatarStyle}>${avatarInfo.avatarText}</div><div><div class="community-review-headline"><div><span class="community-review-user">${escapeHtml(avatarInfo.nick)}</span>${row.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}<div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(row.rating)||0))}">${starFillMarkup(Number(row.rating)||0)}</div></div><span class="community-review-date">${escapeHtml(formatReviewDate(row.updated_at || row.created_at))}${escapeHtml(edited)}</span></div>${row.comment ? `<p class="community-review-comment">${escapeHtml(row.comment)}</p>` : ''}</div></article>`;
     }).join('');
   }
 
   function renderReviewEditor() {
     const copy = communityCopy();
     const guest = !authUser;
+    const own = Boolean(reviewDialogOwnReview);
+    const editing = own && reviewEditorMode === 'edit';
+    const card = document.getElementById('yourReviewCard');
     const picker = document.getElementById('ratingPicker');
     const textarea = document.getElementById('reviewComment');
     const footer = document.querySelector('#yourReviewCard .review-editor-footer');
     const loginNotice = document.getElementById('reviewLoginNotice');
     const saveButton = document.getElementById('saveReviewButton');
-    const deleteButton = document.getElementById('deleteOwnReview');
+    const cancelButton = document.getElementById('cancelReviewEdit');
     const label = document.getElementById('yourReviewLabel');
-    if (label) label.textContent = copy.yourReview;
+    const moderationNotice = document.getElementById('reviewModerationNotice');
+    const hiddenByModeration = Boolean(reviewDialogOwnReview?.is_hidden);
+
+    if (card) card.hidden = own && !editing;
+    if (label) label.textContent = editing ? copy.editingReview : copy.yourReview;
     if (document.getElementById('reviewLoginText')) document.getElementById('reviewLoginText').textContent = copy.loginToReview;
     if (document.getElementById('reviewLoginButton')) document.getElementById('reviewLoginButton').textContent = copy.loginAction;
     if (textarea) textarea.placeholder = copy.commentPlaceholder;
@@ -2631,22 +2715,31 @@
     if (textarea) textarea.hidden = guest;
     if (footer) footer.hidden = guest;
     if (loginNotice) loginNotice.hidden = !guest;
-    if (saveButton) saveButton.textContent = reviewDialogOwnReview ? copy.updateReview : copy.publishReview;
-    if (deleteButton) {
-      deleteButton.textContent = copy.deleteReview;
-      deleteButton.hidden = !reviewDialogOwnReview;
-    }
-    const moderationNotice = document.getElementById('reviewModerationNotice');
-    const hiddenByModeration = Boolean(reviewDialogOwnReview?.is_hidden);
+    if (saveButton) saveButton.textContent = editing ? copy.updateReview : copy.publishReview;
+    if (cancelButton) { cancelButton.textContent = copy.cancelEdit; cancelButton.hidden = !editing; }
     if (moderationNotice) { moderationNotice.hidden = !hiddenByModeration; moderationNotice.textContent = copy.reviewHidden; }
     if (picker) picker.setAttribute('aria-disabled', String(hiddenByModeration));
     if (textarea) textarea.disabled = hiddenByModeration;
-    if (saveButton && hiddenByModeration) saveButton.disabled = true;
-    setReviewDraftRating(reviewDialogOwnReview ? Number(reviewDialogOwnReview.rating) : 0);
-    if (textarea) textarea.value = reviewDialogOwnReview?.comment || '';
+
+    setReviewDraftRating(editing ? Number(reviewDialogOwnReview.rating) : 0);
+    if (textarea) textarea.value = editing ? (reviewDialogOwnReview?.comment || '') : '';
     if (saveButton && hiddenByModeration) saveButton.disabled = true;
     const count = document.getElementById('reviewCharCount');
     if (count) count.textContent = `${textarea?.value.length || 0}/800`;
+    renderOwnReviewSpotlight(reviewDialogPublicRows);
+  }
+
+  function startOwnReviewEdit() {
+    if (!reviewDialogOwnReview || reviewDialogOwnReview.is_hidden) return;
+    reviewEditorMode = 'edit';
+    renderReviewEditor();
+    document.getElementById('yourReviewCard')?.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  function cancelOwnReviewEdit() {
+    reviewEditorMode = 'new';
+    renderReviewEditor();
+    document.getElementById('ownReviewSpotlight')?.scrollIntoView({ behavior:'smooth', block:'center' });
   }
 
   async function loadReviewDialog(gameId) {
@@ -2661,6 +2754,7 @@
       if (reviewsResult.error) throw reviewsResult.error;
       if (ownResult.error) console.warn('[ZOINHO Reviews] Falha ao carregar a própria avaliação.', ownResult.error);
       reviewDialogOwnReview = ownResult.data || null;
+      reviewEditorMode = 'new';
       renderCommunityReviews(reviewsResult.data || []);
       renderReviewEditor();
       renderReviewOverview(gameId);
@@ -2678,13 +2772,15 @@
     reviewDialogGameId = gameId;
     reviewDialogOwnReview = null;
     reviewDraftRating = 0;
+    reviewEditorMode = 'new';
+    reviewDialogPublicRows = [];
     document.getElementById('reviewModalTitle').textContent = communityCopy().reviewsTitle;
     document.getElementById('reviewGameName').textContent = game.title;
     renderReviewOverview(gameId);
     renderReviewEditor();
     openModal(modal);
     await loadReviewDialog(gameId);
-    if (focusEditor) document.getElementById('yourReviewCard')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    if (focusEditor) (reviewDialogOwnReview ? document.getElementById('ownReviewSpotlight') : document.getElementById('yourReviewCard'))?.scrollIntoView({ behavior:'smooth', block:'start' });
   }
 
   async function saveReview() {
@@ -2724,6 +2820,7 @@
       const { error } = await supabaseClient.from('game_reviews').delete().eq('id', reviewDialogOwnReview.id).eq('user_id', authUser.id);
       if (error) throw error;
       reviewDialogOwnReview = null;
+      reviewEditorMode = 'new';
       showToast(communityCopy().reviewDeleted);
       await loadReviewStats({ rerender:true });
       await loadReviewDialog(reviewDialogGameId);
@@ -3056,6 +3153,18 @@
     showToast(getCopy().settingsSaved);
   }));
 
+  fontSizeInputs.forEach(input => input.addEventListener('change', () => {
+    if (!input.checked) return;
+    applyTypography(input.value, currentFontFamily);
+    showToast(getCopy().settingsSaved);
+  }));
+
+  fontFamilyInputs.forEach(input => input.addEventListener('change', () => {
+    if (!input.checked) return;
+    applyTypography(currentFontSize, input.value);
+    showToast(getCopy().settingsSaved);
+  }));
+
   languageSelect.addEventListener('change', () => {
     applyLanguage(languageSelect.value);
     showToast(getCopy().settingsSaved);
@@ -3063,6 +3172,7 @@
 
   document.getElementById('resetSettings').addEventListener('click', () => {
     applyTheme('dark');
+    applyTypography('normal', 'inter');
     applyLanguage('pt-BR');
     searchInput.value = '';
     setActiveFilter('all');
@@ -3118,7 +3228,7 @@
 
   document.getElementById('closeReviewModal')?.addEventListener('click', () => closeModal(reviewModal));
   reviewModal?.addEventListener('click', event => { if (event.target === reviewModal) closeModal(reviewModal); });
-  reviewModal?.addEventListener('close', () => { reviewDialogGameId = null; reviewDialogOwnReview = null; reviewDraftRating = 0; queueMicrotask(syncModalOpenClass); });
+  reviewModal?.addEventListener('close', () => { reviewDialogGameId = null; reviewDialogOwnReview = null; reviewDraftRating = 0; reviewEditorMode = 'new'; reviewDialogPublicRows = []; queueMicrotask(syncModalOpenClass); });
   ratingPicker?.addEventListener('pointermove', event => { if (authUser && !reviewDialogOwnReview?.is_hidden) setReviewDraftRating(ratingFromPointer(event, ratingPicker), { preview:true }); });
   ratingPicker?.addEventListener('pointerleave', () => setReviewDraftRating(reviewDraftRating, { preview:true }));
   ratingPicker?.addEventListener('click', event => { if (authUser && !reviewDialogOwnReview?.is_hidden) setReviewDraftRating(ratingFromPointer(event, ratingPicker)); });
@@ -3135,7 +3245,11 @@
   });
   reviewComment?.addEventListener('input', () => { const count=document.getElementById('reviewCharCount'); if(count) count.textContent=`${reviewComment.value.length}/800`; });
   document.getElementById('saveReviewButton')?.addEventListener('click', () => { void saveReview(); });
-  document.getElementById('deleteOwnReview')?.addEventListener('click', () => { void deleteOwnReview(); });
+  document.getElementById('cancelReviewEdit')?.addEventListener('click', cancelOwnReviewEdit);
+  document.getElementById('ownReviewSpotlight')?.addEventListener('click', event => {
+    if (event.target.closest?.('[data-edit-own-review]')) return startOwnReviewEdit();
+    if (event.target.closest?.('[data-delete-own-review]')) void deleteOwnReview();
+  });
   document.getElementById('reviewLoginButton')?.addEventListener('click', () => {
     closeModal(reviewModal);
     if (guestMode) leaveGuestMode({ openLogin:true }); else { setAuthMode('login'); openModal(accountModal); }
@@ -3182,6 +3296,7 @@
   void loadReviewStats({ rerender:true });
   void loadGameDates();
   applyTheme(currentTheme, false);
+  applyTypography(currentFontSize, currentFontFamily, false);
   applyLanguage(currentLanguage, false);
   setActiveFilter('all');
   setAuthMode('login');
