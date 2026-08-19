@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.5.0';
+  const ZOINHO_CLOUD_BUILD = '1.5.1';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`, { integratedGames: ['blood-machine', 'dead-signal', 'heroes-battle'] });
 
@@ -1575,7 +1575,6 @@
   const cloudSyncSection = document.getElementById('cloudSyncSection');
   const guestGoToLoginButton = document.getElementById('guestGoToLogin');
   const signOutButton = document.getElementById('signOutButton');
-  const exitGuestButton = document.getElementById('exitGuestButton');
   const cloudGameSearch = document.getElementById('cloudGameSearch');
   const cloudGamesList = document.getElementById('cloudGamesList');
   const cloudSyncNowButton = document.getElementById('cloudSyncNowButton');
@@ -1648,6 +1647,7 @@
   }
 
   function currentDisplayName() {
+    if (guestMode && !authUser) return 'Guest';
     const name = String(getLocalProfile().displayName || '').trim();
     return name || fallbackDisplayName();
   }
@@ -1669,14 +1669,18 @@
   }
 
   function setAccountTab(tab) {
-    accountTab = tab === 'cloud' ? 'cloud' : 'profile';
+    const guestSession = guestMode && !authUser;
+    accountTab = guestSession ? 'cloud' : (tab === 'cloud' ? 'cloud' : 'profile');
     document.querySelectorAll('[data-account-tab]').forEach(button => {
-      const active = button.dataset.accountTab === accountTab;
+      const profileOnly = button.dataset.accountTab === 'profile';
+      button.hidden = guestSession && profileOnly;
+      const active = !button.hidden && button.dataset.accountTab === accountTab;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-selected', String(active));
     });
     document.querySelectorAll('[data-account-pane]').forEach(pane => {
-      pane.hidden = pane.dataset.accountPane !== accountTab;
+      const profileOnly = pane.dataset.accountPane === 'profile';
+      pane.hidden = (guestSession && profileOnly) || pane.dataset.accountPane !== accountTab;
     });
   }
 
@@ -1696,7 +1700,8 @@
     const gate = isEntryGateRequired();
     accountModal.classList.toggle('is-auth-gate', gate);
     accountModal.classList.toggle('is-guest-session', guestMode && !authUser);
-    if (closeAccountModalButton) closeAccountModalButton.hidden = gate;
+    // O X só existe nas informações de uma sessão já iniciada. Login, cadastro e recuperação não têm botão de fechar.
+    if (closeAccountModalButton) closeAccountModalButton.hidden = recoveryMode || (!authUser && !guestMode);
     if (gate) {
       if (settingsModal?.open) closeModal(settingsModal);
       if (gameModal?.open) closeModal(gameModal);
@@ -1827,11 +1832,13 @@
   function renderAccount() {
     const copy = getCopy();
     const signedIn = Boolean(authUser);
-    const inSession = signedIn || guestMode;
-    const profile = getLocalProfile();
-    const displayName = currentDisplayName();
+    const guestSession = guestMode && !signedIn;
+    const inSession = signedIn || guestSession;
+    // Guest não possui perfil personalizável. Qualquer perfil guest legado é deliberadamente ignorado.
+    const profile = signedIn ? getLocalProfile() : {};
+    const displayName = guestSession ? 'Guest' : currentDisplayName();
     openAccountButton.classList.toggle('is-online', signedIn);
-    openAccountButton.classList.toggle('is-guest', guestMode && !signedIn);
+    openAccountButton.classList.toggle('is-guest', guestSession);
 
     if (inSession) {
       accountButtonTitle.textContent = displayName;
@@ -1854,12 +1861,13 @@
     authLoggedOut.hidden = inSession || recoveryMode;
     authLoggedIn.hidden = !inSession || recoveryMode;
     authRecovery.hidden = !recoveryMode;
-    if (guestCloudNotice) guestCloudNotice.hidden = !guestMode || signedIn;
-    if (cloudSyncSection) cloudSyncSection.hidden = guestMode || !signedIn;
+    if (guestCloudNotice) guestCloudNotice.hidden = !guestSession;
+    if (cloudSyncSection) cloudSyncSection.hidden = !signedIn;
+    // Só uma conta autenticada possui ação de logout. Guest não recebe botão de saída aqui.
     if (signOutButton) signOutButton.hidden = !signedIn;
-    if (exitGuestButton) exitGuestButton.hidden = !guestMode || signedIn;
     if (inSession) {
-      hydrateProfileEditor();
+      if (guestSession) accountTab = 'cloud';
+      if (signedIn) hydrateProfileEditor();
       setAccountTab(accountTab);
     }
     renderCloudState();
@@ -2341,7 +2349,7 @@
   document.getElementById('openSettings').addEventListener('click', () => openModal(settingsModal));
   openAccountButton.addEventListener('click', () => {
     if (authUser || guestMode) {
-      accountTab = 'profile';
+      accountTab = authUser ? 'profile' : 'cloud';
       renderAccount();
     }
     openModal(accountModal);
@@ -2371,7 +2379,6 @@
   });
   saveLocalProfileButton?.addEventListener('click', saveProfileEditor);
   guestGoToLoginButton?.addEventListener('click', () => leaveGuestMode({ openLogin: true }));
-  exitGuestButton?.addEventListener('click', () => leaveGuestMode({ openLogin: true }));
   forgotPassword.addEventListener('click', sendPasswordReset);
   recoveryForm.addEventListener('submit', submitRecoveryForm);
   cancelRecovery.addEventListener('click', () => {
