@@ -10,7 +10,7 @@
   <link rel="icon" href="/favicon-zoinho-v2.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-32x32.png?v=2" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-  <link rel="stylesheet" href="styles.css?v=cloud-1.3" />
+  <link rel="stylesheet" href="styles.css?v=cloud-1.5.0" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -231,6 +231,9 @@
           <p class="auth-help" id="authHelp" data-i18n="accountLoginHelp">Entre para sincronizar seus saves entre computadores.</p>
           <p class="auth-error" id="authError" role="alert" hidden></p>
           <button class="button button-primary auth-submit" id="authSubmit" type="submit" data-i18n="accountLogin">Entrar</button>
+          <div class="auth-or"><span data-i18n="authOr">ou</span></div>
+          <button class="button guest-entry-button" id="guestEntryButton" type="button" data-i18n="accountGuestButton">Jogar como Guest (⚠️Sem saves na nuvem⚠️)</button>
+          <p class="guest-entry-help" data-i18n="accountGuestHelp">Entra no portal sem conta. O progresso continua local em cada jogo e não é enviado para a nuvem.</p>
           <button class="auth-link" id="forgotPassword" type="button" data-i18n="accountForgot">Esqueci minha senha</button>
         </form>
       </div>
@@ -252,22 +255,65 @@
         <section class="account-summary">
           <div class="account-profile-row">
             <span class="account-profile-avatar" id="accountProfileAvatar">Z</span>
-            <div><span class="account-status-dot"><i></i><span data-i18n="accountConnected">CONECTADO</span></span><h3 id="accountEmailDisplay">—</h3><p id="accountUserId">—</p></div>
-          </div>
-          <section class="cloud-sync-section" aria-labelledby="cloudSyncTitle">
-            <div class="cloud-sync-head">
-              <h3 id="cloudSyncTitle" data-i18n="cloudSectionTitle">Sincronização na Nuvem</h3>
+            <div class="account-profile-copy">
+              <span class="account-status-dot"><i></i><span id="accountConnectionLabel" data-i18n="accountConnected">CONECTADO</span></span>
+              <h3 id="accountDisplayName">Jogador</h3>
+              <p class="account-email" id="accountEmailDisplay">—</p>
+              <p class="account-identity-meta" id="accountIdentityMeta">—</p>
             </div>
-            <label class="cloud-sync-search" for="cloudGameSearch">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-              <input id="cloudGameSearch" type="search" autocomplete="off" data-i18n-placeholder="cloudSearchPlaceholder" placeholder="Pesquisar jogo..." />
-            </label>
-            <div class="cloud-sync-games" id="cloudGamesList" aria-live="polite"></div>
-            <button class="button button-ghost cloud-sync-now" id="cloudSyncNowButton" type="button" data-i18n="cloudSyncNow">Sincronizar agora</button>
+          </div>
+
+          <div class="account-section-tabs" role="tablist" aria-label="Seções da conta">
+            <button class="account-section-tab is-active" type="button" role="tab" aria-selected="true" data-account-tab="profile" data-i18n="accountProfileTab">Perfil</button>
+            <button class="account-section-tab" type="button" role="tab" aria-selected="false" data-account-tab="cloud" data-i18n="accountCloudTab">Nuvem</button>
+          </div>
+
+          <section class="account-pane profile-pane" data-account-pane="profile">
+            <div class="profile-editor-head">
+              <div>
+                <h3 data-i18n="profileTitle">Perfil local</h3>
+                <p data-i18n="profileHelp">Nome e foto ficam somente neste dispositivo por enquanto. Nada disso é enviado ao banco.</p>
+              </div>
+            </div>
+            <div class="profile-editor-grid">
+              <div class="profile-photo-editor">
+                <span class="profile-avatar-preview" id="profileAvatarPreview">Z</span>
+                <input id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+                <div class="profile-photo-actions">
+                  <button class="button button-ghost" id="chooseProfilePhoto" type="button" data-i18n="profileChoosePhoto">Escolher foto</button>
+                  <button class="profile-remove-photo" id="removeProfilePhoto" type="button" data-i18n="profileRemovePhoto">Remover foto</button>
+                </div>
+              </div>
+              <label class="auth-field profile-name-field">
+                <span data-i18n="profileDisplayName">Nome de exibição</span>
+                <input id="accountProfileName" type="text" autocomplete="nickname" minlength="2" maxlength="32" data-i18n-placeholder="profileNamePlaceholder" placeholder="Como você quer aparecer no portal?" />
+              </label>
+            </div>
+            <button class="button button-primary profile-save-button" id="saveLocalProfile" type="button" data-i18n="profileSave">Salvar perfil</button>
+          </section>
+
+          <section class="account-pane cloud-pane" data-account-pane="cloud" hidden>
+            <div class="guest-cloud-notice" id="guestCloudNotice" hidden>
+              <div class="guest-cloud-icon" aria-hidden="true">☁×</div>
+              <div><h3 data-i18n="guestCloudTitle">Cloud Save indisponível no modo Guest</h3><p data-i18n="guestCloudText">Os jogos continuam salvando normalmente no próprio navegador, mas nada é enviado ao Supabase. Entre ou crie uma conta para sincronizar entre dispositivos.</p></div>
+              <button class="button button-primary" id="guestGoToLogin" type="button" data-i18n="guestGoToLogin">Entrar ou criar conta</button>
+            </div>
+            <section class="cloud-sync-section" id="cloudSyncSection" aria-labelledby="cloudSyncTitle">
+              <div class="cloud-sync-head">
+                <h3 id="cloudSyncTitle" data-i18n="cloudSectionTitle">Sincronização na Nuvem</h3>
+              </div>
+              <label class="cloud-sync-search" for="cloudGameSearch">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                <input id="cloudGameSearch" type="search" autocomplete="off" data-i18n-placeholder="cloudSearchPlaceholder" placeholder="Pesquisar jogo..." />
+              </label>
+              <div class="cloud-sync-games" id="cloudGamesList" aria-live="polite"></div>
+              <button class="button button-ghost cloud-sync-now" id="cloudSyncNowButton" type="button" data-i18n="cloudSyncNow">Sincronizar agora</button>
+            </section>
           </section>
         </section>
         <div class="modal-footer account-footer">
           <button class="button button-ghost" id="signOutButton" type="button" data-i18n="accountLogout">Sair da conta</button>
+          <button class="button button-ghost" id="exitGuestButton" type="button" data-i18n="guestExit" hidden>Sair do modo Guest</button>
         </div>
       </div>
     </div>
@@ -367,7 +413,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=cloud-1.4"></script>
-  <script src="app.js?v=cloud-1.4"></script>
+  <script src="supabase-config.js?v=cloud-1.5.0"></script>
+  <script src="app.js?v=cloud-1.5.0"></script>
 </body>
 </html>
