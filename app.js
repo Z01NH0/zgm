@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.7.1';
+  const ZOINHO_CLOUD_BUILD = '1.8.0';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -62,6 +62,27 @@
       profileRemovePhoto: 'Remover foto',
       profileSave: 'Salvar perfil',
       profileSaved: 'Perfil sincronizado com a sua conta.',
+      profileTitlesKicker: 'TÍTULOS',
+      profileTitlesTitle: 'Títulos equipados',
+      profileTitlesHelp: 'Escolha até 3 títulos desbloqueados para aparecer ao lado do seu nickname.',
+      profileTitlesSave: 'Salvar títulos',
+      profileTitlesSaved: 'Títulos atualizados.',
+      profileTitlesEmpty: 'Você ainda não desbloqueou nenhum título.',
+      profileTitlesLoading: 'Carregando títulos...',
+      profileTitlesLimit: 'Você pode equipar no máximo 3 títulos.',
+      publicProfileKicker: 'PERFIL PÚBLICO',
+      publicProfileGames: 'jogos jogados',
+      publicProfileReviews: 'avaliações',
+      publicProfileLoading: 'Carregando perfil...',
+      publicProfilePlayedTitle: 'Jogos jogados',
+      publicProfilePlayedHelp: 'Jogos abertos por esta conta pelo portal. Nenhum save é exibido.',
+      publicProfileReviewsTitle: 'Avaliações públicas',
+      publicProfileReviewsHelp: 'Somente avaliações visíveis para a comunidade.',
+      publicProfileError: 'Não foi possível carregar este perfil.',
+      publicProfileNoGames: 'Nenhum jogo registrado ainda.',
+      publicProfileNoReviews: 'Nenhuma avaliação pública ainda.',
+      publicProfileLastPlayed: 'Última partida',
+      publicProfileOpen: 'Ver perfil de {name}',
       profileInvalidName: 'Escolha um nickname entre 2 e 32 caracteres.',
       profileInvalidImage: 'Escolha uma imagem PNG, JPG ou WEBP válida.',
       profileImageTooLarge: 'A imagem é grande demais. Use um arquivo de até 8 MB.',
@@ -267,6 +288,27 @@
       profileRemovePhoto: 'Remove photo',
       profileSave: 'Save profile',
       profileSaved: 'Profile synced to your account.',
+      profileTitlesKicker: 'TITLES',
+      profileTitlesTitle: 'Equipped titles',
+      profileTitlesHelp: 'Choose up to 3 unlocked titles to display next to your nickname.',
+      profileTitlesSave: 'Save titles',
+      profileTitlesSaved: 'Titles updated.',
+      profileTitlesEmpty: 'You have not unlocked any titles yet.',
+      profileTitlesLoading: 'Loading titles...',
+      profileTitlesLimit: 'You can equip at most 3 titles.',
+      publicProfileKicker: 'PUBLIC PROFILE',
+      publicProfileGames: 'games played',
+      publicProfileReviews: 'reviews',
+      publicProfileLoading: 'Loading profile...',
+      publicProfilePlayedTitle: 'Games played',
+      publicProfilePlayedHelp: 'Games opened by this account through the portal. No save data is shown.',
+      publicProfileReviewsTitle: 'Public reviews',
+      publicProfileReviewsHelp: 'Only reviews visible to the community.',
+      publicProfileError: 'This profile could not be loaded.',
+      publicProfileNoGames: 'No games recorded yet.',
+      publicProfileNoReviews: 'No public reviews yet.',
+      publicProfileLastPlayed: 'Last played',
+      publicProfileOpen: 'View {name} profile',
       profileInvalidName: 'Choose a nickname between 2 and 32 characters.',
       profileInvalidImage: 'Choose a valid PNG, JPG or WEBP image.',
       profileImageTooLarge: 'The image is too large. Use a file up to 8 MB.',
@@ -973,6 +1015,12 @@
   let profileLoadError = null;
   let profileLoading = false;
   let profileSaving = false;
+  let myTitles = [];
+  let pendingEquippedTitleIds = [];
+  let titlesLoading = false;
+  let titlesSaving = false;
+  let publicProfileUserId = null;
+  let publicProfileData = null;
   const NICKNAME_COOLDOWN_MS = 2 * 60 * 60 * 1000;
   let authMode = 'login';
   let authInitialized = false;
@@ -1282,6 +1330,7 @@
   function launchGame(game) {
     const child = window.open(bridgeLaunchUrl(game), '_blank');
     if (!child) showToast('O navegador bloqueou a nova aba. Libere pop-ups para jogar.');
+    else if (authUser && !guestMode) void markGamePlayed(game.id);
     return child;
   }
 
@@ -1772,6 +1821,7 @@
   const accountEmailDisplay = document.getElementById('accountEmailDisplay');
   const accountProfileAvatar = document.getElementById('accountProfileAvatar');
   const accountDisplayName = document.getElementById('accountDisplayName');
+  const accountEquippedTitles = document.getElementById('accountEquippedTitles');
   const accountIdentityMeta = document.getElementById('accountIdentityMeta');
   const closeAccountModalButton = document.getElementById('closeAccountModal');
   const guestEntryButton = document.getElementById('guestEntryButton');
@@ -1782,6 +1832,20 @@
   const chooseProfilePhoto = document.getElementById('chooseProfilePhoto');
   const removeProfilePhoto = document.getElementById('removeProfilePhoto');
   const saveLocalProfileButton = document.getElementById('saveLocalProfile');
+  const profileTitleList = document.getElementById('profileTitleList');
+  const profileTitleLimit = document.getElementById('profileTitleLimit');
+  const saveProfileTitlesButton = document.getElementById('saveProfileTitles');
+  const publicProfileModal = document.getElementById('publicProfileModal');
+  const publicProfileAvatar = document.getElementById('publicProfileAvatar');
+  const publicProfileDisplayName = document.getElementById('publicProfileDisplayName');
+  const publicProfileTitles = document.getElementById('publicProfileTitles');
+  const publicProfileGamesCount = document.getElementById('publicProfileGamesCount');
+  const publicProfileReviewsCount = document.getElementById('publicProfileReviewsCount');
+  const publicProfileLoading = document.getElementById('publicProfileLoading');
+  const publicProfileContent = document.getElementById('publicProfileContent');
+  const publicProfileError = document.getElementById('publicProfileError');
+  const publicProfileGamesList = document.getElementById('publicProfileGamesList');
+  const publicProfileReviewsList = document.getElementById('publicProfileReviewsList');
   const guestCloudNotice = document.getElementById('guestCloudNotice');
   const cloudSyncSection = document.getElementById('cloudSyncSection');
   const guestGoToLoginButton = document.getElementById('guestGoToLogin');
@@ -1894,6 +1958,140 @@
     element.classList.toggle('has-photo', Boolean(image));
     element.style.backgroundImage = image ? `url(${JSON.stringify(image)})` : '';
     element.textContent = image ? '' : accountInitial();
+  }
+
+  function localizedTitleName(title) {
+    if (!title) return '';
+    return currentLanguage === 'en'
+      ? String(title.name_en || title.name_pt || title.id || '').trim()
+      : String(title.name_pt || title.name_en || title.id || '').trim();
+  }
+
+  function localizedTitleDescription(title) {
+    if (!title) return '';
+    return currentLanguage === 'en'
+      ? String(title.description_en || title.description_pt || '').trim()
+      : String(title.description_pt || title.description_en || '').trim();
+  }
+
+  function safeTitleStyle(value) {
+    const style = String(value || 'default').toLowerCase().replace(/[^a-z0-9-]/g, '');
+    return style || 'default';
+  }
+
+  function titleBadgeMarkup(title, extraClass = '') {
+    const name = localizedTitleName(title);
+    if (!name) return '';
+    const style = safeTitleStyle(title.style_key);
+    const description = localizedTitleDescription(title);
+    return `<span class="user-title-badge title-style-${style}${extraClass ? ` ${escapeAttr(extraClass)}` : ''}"${description ? ` title="${escapeAttr(description)}"` : ''}>${escapeHtml(name)}</span>`;
+  }
+
+  function titleBadgesMarkup(titles, extraClass = '') {
+    const list = Array.isArray(titles) ? titles.slice(0, 3) : [];
+    return list.map(title => titleBadgeMarkup(title, extraClass)).join('');
+  }
+
+  function currentEquippedTitles() {
+    return myTitles
+      .filter(title => Number(title.equipped_slot) >= 1 && Number(title.equipped_slot) <= 3)
+      .sort((a, b) => Number(a.equipped_slot) - Number(b.equipped_slot));
+  }
+
+  function renderProfileTitles() {
+    if (!profileTitleList) return;
+    const copy = getCopy();
+    const selected = new Set(pendingEquippedTitleIds);
+    if (profileTitleLimit) profileTitleLimit.textContent = `${selected.size} / 3`;
+    if (saveProfileTitlesButton) saveProfileTitlesButton.disabled = !authUser || titlesLoading || titlesSaving;
+
+    if (!authUser) {
+      profileTitleList.innerHTML = '';
+      return;
+    }
+    if (titlesLoading) {
+      profileTitleList.innerHTML = `<p class="profile-title-empty">${escapeHtml(copy.profileTitlesLoading)}</p>`;
+      return;
+    }
+    if (!myTitles.length) {
+      profileTitleList.innerHTML = `<p class="profile-title-empty">${escapeHtml(copy.profileTitlesEmpty)}</p>`;
+      return;
+    }
+
+    profileTitleList.innerHTML = myTitles.map(title => {
+      const checked = selected.has(title.title_id);
+      const name = localizedTitleName(title);
+      const description = localizedTitleDescription(title);
+      return `<button class="profile-title-option${checked ? ' is-selected' : ''}" type="button" data-profile-title="${escapeAttr(title.title_id)}" aria-pressed="${checked}"><span class="profile-title-option-badge">${titleBadgeMarkup(title)}</span><span class="profile-title-option-copy"><strong>${escapeHtml(name)}</strong><small>${escapeHtml(description)}</small></span><span class="profile-title-check" aria-hidden="true">${checked ? '✓' : '+'}</span></button>`;
+    }).join('');
+  }
+
+  async function loadMyTitles(expectedUserId = authUser?.id || null) {
+    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId) {
+      myTitles = [];
+      pendingEquippedTitleIds = [];
+      renderProfileTitles();
+      return [];
+    }
+    titlesLoading = true;
+    renderProfileTitles();
+    try {
+      const { data, error } = await supabaseClient.rpc('zoinho_get_my_titles');
+      if (error) throw error;
+      if (authUser?.id !== expectedUserId) return [];
+      myTitles = Array.isArray(data) ? data : [];
+      pendingEquippedTitleIds = currentEquippedTitles().map(title => title.title_id);
+      renderProfileTitles();
+      renderAccount();
+      if (reviewDialogGameId && reviewDialogOwnReview) renderOwnReviewSpotlight(reviewDialogPublicRows);
+      return myTitles;
+    } catch (error) {
+      console.warn('[ZOINHO Titles] Não foi possível carregar os títulos.', error);
+      myTitles = [];
+      pendingEquippedTitleIds = [];
+      renderProfileTitles();
+      return [];
+    } finally {
+      titlesLoading = false;
+      renderProfileTitles();
+    }
+  }
+
+  function toggleProfileTitle(titleId) {
+    if (!authUser || titlesLoading || titlesSaving || !myTitles.some(title => title.title_id === titleId)) return;
+    const next = [...pendingEquippedTitleIds];
+    const index = next.indexOf(titleId);
+    if (index >= 0) next.splice(index, 1);
+    else {
+      if (next.length >= 3) {
+        showToast(getCopy().profileTitlesLimit);
+        return;
+      }
+      next.push(titleId);
+    }
+    pendingEquippedTitleIds = next;
+    renderProfileTitles();
+  }
+
+  async function saveEquippedTitles() {
+    if (!authUser || !supabaseClient || titlesLoading || titlesSaving) return false;
+    titlesSaving = true;
+    renderProfileTitles();
+    try {
+      const { error } = await supabaseClient.rpc('zoinho_set_equipped_titles', { p_title_ids: pendingEquippedTitleIds });
+      if (error) throw error;
+      await loadMyTitles(authUser.id);
+      showToast(getCopy().profileTitlesSaved);
+      if (reviewDialogGameId && reviewModal?.open) await loadReviewDialog(reviewDialogGameId);
+      return true;
+    } catch (error) {
+      console.warn('[ZOINHO Titles] Não foi possível salvar os títulos.', error);
+      showToast(error?.message?.includes('title_limit') ? getCopy().profileTitlesLimit : getCopy().profileSaveError);
+      return false;
+    } finally {
+      titlesSaving = false;
+      renderProfileTitles();
+    }
   }
 
   function sanitizeDisplayName(value) {
@@ -2015,6 +2213,7 @@
     pendingProfileAvatar = undefined;
     paintAvatar(profileAvatarPreview, profile);
     renderNicknameCooldown();
+    renderProfileTitles();
   }
 
   function isEntryGateRequired() {
@@ -2032,6 +2231,7 @@
       if (settingsModal?.open) closeModal(settingsModal);
       if (gameModal?.open) closeModal(gameModal);
       if (cloudGameInfoModal?.open) closeModal(cloudGameInfoModal);
+      if (publicProfileModal?.open) closeModal(publicProfileModal);
     }
     if ((gate || recoveryMode) && !accountModal.open) openModal(accountModal);
   }
@@ -2172,6 +2372,7 @@
       paintAvatar(accountAvatar, profile);
       paintAvatar(accountProfileAvatar, profile);
       if (accountDisplayName) accountDisplayName.textContent = displayName;
+      if (accountEquippedTitles) accountEquippedTitles.innerHTML = signedIn ? titleBadgesMarkup(currentEquippedTitles(), 'is-account-title') : '';
       if (accountEmailDisplay) accountEmailDisplay.textContent = signedIn ? (authUser.email || 'ZOINHO Account') : copy.accountGuestLocal;
       if (accountIdentityMeta) accountIdentityMeta.textContent = signedIn ? authUser.id : copy.accountGuestHelp;
       const statusLabel = document.getElementById('accountConnectionLabel');
@@ -2182,6 +2383,7 @@
       accountAvatar.classList.remove('has-photo');
       accountAvatar.style.backgroundImage = '';
       accountAvatar.textContent = '?';
+      if (accountEquippedTitles) accountEquippedTitles.innerHTML = '';
     }
 
     authLoggedOut.hidden = inSession || recoveryMode;
@@ -2240,6 +2442,11 @@
       cloudProfileUserId = null;
       profileLoadError = null;
       profileLoading = false;
+      myTitles = [];
+      pendingEquippedTitleIds = [];
+      titlesLoading = false;
+      titlesSaving = false;
+      renderProfileTitles();
       clearCloudQueue();
       resetCloudSessionState();
       currentUserRole = 'user';
@@ -2258,6 +2465,7 @@
     if (authUser) {
       void loadCloudProfile(authUser.id);
       void loadCurrentUserRole(authUser.id);
+      void loadMyTitles(authUser.id);
       void probeCloudAccess(authUser.id);
       if (accountModal?.open && !recoveryMode) closeModal(accountModal);
     }
@@ -2609,6 +2817,113 @@
     return new Intl.DateTimeFormat(currentLanguage, { dateStyle:'medium', timeStyle:'short' }).format(date);
   }
 
+  function renderPublicProfile(data = publicProfileData) {
+    if (!publicProfileModal) return;
+    const copy = getCopy();
+    if (!data) return;
+    const nickname = String(data.nickname || 'Jogador').trim() || 'Jogador';
+    const avatar = String(data.avatar_data_url || '');
+    const titles = Array.isArray(data.titles) ? data.titles : [];
+    const played = Array.isArray(data.games_played) ? data.games_played : [];
+    const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+
+    const titleEl = document.getElementById('publicProfileName');
+    if (titleEl) titleEl.textContent = nickname;
+    if (publicProfileDisplayName) publicProfileDisplayName.textContent = nickname;
+    if (publicProfileAvatar) {
+      const hasPhoto = avatar.startsWith('data:image/');
+      publicProfileAvatar.classList.toggle('has-photo', hasPhoto);
+      publicProfileAvatar.style.backgroundImage = hasPhoto ? `url(${JSON.stringify(avatar)})` : '';
+      publicProfileAvatar.textContent = hasPhoto ? '' : ([...nickname][0]?.toUpperCase() || 'J');
+    }
+    if (publicProfileTitles) {
+      publicProfileTitles.innerHTML = titles.length
+        ? titleBadgesMarkup(titles, 'is-public-profile-title')
+        : '<span class="public-profile-no-title">—</span>';
+    }
+    if (publicProfileGamesCount) publicProfileGamesCount.textContent = String(Number(data.stats?.games_played) || played.length || 0);
+    if (publicProfileReviewsCount) publicProfileReviewsCount.textContent = String(Number(data.stats?.reviews) || reviews.length || 0);
+
+    if (publicProfileGamesList) {
+      publicProfileGamesList.innerHTML = played.length ? played.map(game => {
+        const image = String(game.image_url || '');
+        const genres = currentLanguage === 'en' ? (game.genres_en || game.genres_pt || '') : (game.genres_pt || game.genres_en || '');
+        const when = formatReviewDate(game.last_played_at);
+        return `<article class="public-game-card">${image ? `<img src="${escapeAttr(image)}" alt="" loading="lazy" />` : '<div class="public-game-placeholder">ZG</div>'}<div><strong>${escapeHtml(game.title || game.game_id || 'Jogo')}</strong>${genres ? `<p>${escapeHtml(genres)}</p>` : ''}<small>${escapeHtml(copy.publicProfileLastPlayed)}: ${escapeHtml(when || copy.dateUnavailable)}</small></div></article>`;
+      }).join('') : `<div class="public-profile-empty">${escapeHtml(copy.publicProfileNoGames)}</div>`;
+    }
+
+    if (publicProfileReviewsList) {
+      publicProfileReviewsList.innerHTML = reviews.length ? reviews.map(review => {
+        const rating = Number(review.rating) || 0;
+        const edited = review.updated_at && review.created_at && Math.abs(new Date(review.updated_at) - new Date(review.created_at)) > 1500 ? ` · ${communityCopy().edited}` : '';
+        return `<article class="public-profile-review"><div class="public-profile-review-head"><div><strong>${escapeHtml(review.game_title || review.game_id || 'Jogo')}</strong>${review.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(communityCopy().verified)}</span>` : ''}</div><span>${escapeHtml(formatReviewDate(review.updated_at || review.created_at))}${escapeHtml(edited)}</span></div><div class="rating-stars community-review-stars" aria-label="${escapeAttr(communityCopy().ratingAria(rating))}">${starFillMarkup(rating)}</div>${review.comment ? `<p>${escapeHtml(review.comment)}</p>` : ''}</article>`;
+      }).join('') : `<div class="public-profile-empty">${escapeHtml(copy.publicProfileNoReviews)}</div>`;
+    }
+
+    if (publicProfileLoading) publicProfileLoading.hidden = true;
+    if (publicProfileError) publicProfileError.hidden = true;
+    if (publicProfileContent) publicProfileContent.hidden = false;
+  }
+
+  function setPublicProfileLoadingState() {
+    if (publicProfileLoading) {
+      publicProfileLoading.hidden = false;
+      publicProfileLoading.textContent = getCopy().publicProfileLoading;
+    }
+    if (publicProfileContent) publicProfileContent.hidden = true;
+    if (publicProfileError) {
+      publicProfileError.hidden = true;
+      publicProfileError.textContent = getCopy().publicProfileError;
+    }
+    if (publicProfileTitles) publicProfileTitles.innerHTML = '';
+    if (publicProfileGamesCount) publicProfileGamesCount.textContent = '—';
+    if (publicProfileReviewsCount) publicProfileReviewsCount.textContent = '—';
+  }
+
+  async function openPublicProfile(userId) {
+    if (!supabaseClient || !userId || !publicProfileModal) return;
+    publicProfileUserId = userId;
+    publicProfileData = null;
+    setPublicProfileLoadingState();
+    const titleEl = document.getElementById('publicProfileName');
+    if (titleEl) titleEl.textContent = getCopy().publicProfileLoading;
+    if (publicProfileDisplayName) publicProfileDisplayName.textContent = '—';
+    if (publicProfileAvatar) {
+      publicProfileAvatar.classList.remove('has-photo');
+      publicProfileAvatar.style.backgroundImage = '';
+      publicProfileAvatar.textContent = '?';
+    }
+    openModal(publicProfileModal);
+    try {
+      const { data, error } = await supabaseClient.rpc('zoinho_get_public_profile', { p_user_id: userId });
+      if (error) throw error;
+      if (publicProfileUserId !== userId) return;
+      if (!data || typeof data !== 'object') throw new Error('profile_not_found');
+      publicProfileData = data;
+      renderPublicProfile(data);
+    } catch (error) {
+      console.warn('[ZOINHO Profile] Falha ao carregar perfil público.', error);
+      if (publicProfileLoading) publicProfileLoading.hidden = true;
+      if (publicProfileContent) publicProfileContent.hidden = true;
+      if (publicProfileError) {
+        publicProfileError.hidden = false;
+        publicProfileError.textContent = getCopy().publicProfileError;
+      }
+    }
+  }
+
+  async function markGamePlayed(gameId) {
+    if (!authUser || guestMode || !supabaseClient || !gameId) return;
+    try {
+      const { error } = await supabaseClient.rpc('zoinho_mark_game_played', { p_game_id: gameId });
+      if (error) throw error;
+    } catch (error) {
+      // Atividade pública é complementar; nunca deve impedir o jogo de abrir.
+      console.warn('[ZOINHO Activity] Não foi possível registrar a abertura do jogo.', error);
+    }
+  }
+
   function setReviewDraftRating(value, { preview = false } = {}) {
     const picker = document.getElementById('ratingPicker');
     const stars = document.getElementById('ratingPickerStars');
@@ -2666,9 +2981,11 @@
     const publicOwn = publicRows.find(row => row.user_id === authUser.id || row.id === own.id) || null;
     const profile = getAccountProfile();
     const avatarInfo = reviewAvatarMarkup(publicOwn?.nickname || profile?.nickname || fallbackDisplayName(), publicOwn?.avatar_data_url || profile?.avatarDataUrl || '');
+    const equippedTitles = Array.isArray(publicOwn?.equipped_titles) ? publicOwn.equipped_titles : currentEquippedTitles();
     const edited = own.updated_at && own.created_at && Math.abs(new Date(own.updated_at) - new Date(own.created_at)) > 1500 ? ` · ${copy.edited}` : '';
     const hiddenNotice = own.is_hidden ? `<p class="review-moderation-notice own-review-moderation">${escapeHtml(copy.reviewHidden)}</p>` : '';
-    root.innerHTML = `<article class="community-review is-own-review"><div class="community-review-avatar"${avatarInfo.avatarStyle}>${avatarInfo.avatarText}</div><div class="own-review-content"><div class="own-review-topline"><span class="own-review-badge">★ ${escapeHtml(copy.ownReviewBadge)}</span><span class="community-review-date">${escapeHtml(formatReviewDate(own.updated_at || own.created_at))}${escapeHtml(edited)}</span></div><div class="community-review-headline"><div><span class="community-review-user">${escapeHtml(avatarInfo.nick)}</span>${publicOwn?.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}<div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(own.rating)||0))}">${starFillMarkup(Number(own.rating)||0)}</div></div></div>${own.comment ? `<p class="community-review-comment">${escapeHtml(own.comment)}</p>` : ''}${hiddenNotice}<div class="own-review-actions">${own.is_hidden ? '' : `<button class="admin-mini-btn" type="button" data-edit-own-review>${escapeHtml(copy.editReview)}</button>`}<button class="admin-mini-btn danger" type="button" data-delete-own-review>${escapeHtml(copy.deleteReview)}</button></div></div></article>`;
+    const profileAria = getCopy().publicProfileOpen.replace('{name}', avatarInfo.nick);
+    root.innerHTML = `<article class="community-review is-own-review"><button class="community-review-avatar community-profile-trigger" type="button" data-public-profile="${escapeAttr(authUser.id)}" aria-label="${escapeAttr(profileAria)}"${avatarInfo.avatarStyle}>${avatarInfo.avatarText}</button><div class="own-review-content"><div class="own-review-topline"><span class="own-review-badge">★ ${escapeHtml(copy.ownReviewBadge)}</span><span class="community-review-date">${escapeHtml(formatReviewDate(own.updated_at || own.created_at))}${escapeHtml(edited)}</span></div><div class="community-review-headline"><div><div class="community-review-identity-line"><button class="community-review-user community-profile-trigger" type="button" data-public-profile="${escapeAttr(authUser.id)}" aria-label="${escapeAttr(profileAria)}">${escapeHtml(avatarInfo.nick)}</button><span class="comment-title-list">${titleBadgesMarkup(equippedTitles, 'is-comment-title')}</span>${publicOwn?.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}</div><div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(own.rating)||0))}">${starFillMarkup(Number(own.rating)||0)}</div></div></div>${own.comment ? `<p class="community-review-comment">${escapeHtml(own.comment)}</p>` : ''}${hiddenNotice}<div class="own-review-actions">${own.is_hidden ? '' : `<button class="admin-mini-btn" type="button" data-edit-own-review>${escapeHtml(copy.editReview)}</button>`}<button class="admin-mini-btn danger" type="button" data-delete-own-review>${escapeHtml(copy.deleteReview)}</button></div></div></article>`;
     root.hidden = false;
   }
 
@@ -2686,7 +3003,9 @@
     root.innerHTML = visibleRows.map(row => {
       const avatarInfo = reviewAvatarMarkup(row.nickname, row.avatar_data_url);
       const edited = row.updated_at && row.created_at && Math.abs(new Date(row.updated_at) - new Date(row.created_at)) > 1500 ? ` · ${copy.edited}` : '';
-      return `<article class="community-review"><div class="community-review-avatar"${avatarInfo.avatarStyle}>${avatarInfo.avatarText}</div><div><div class="community-review-headline"><div><span class="community-review-user">${escapeHtml(avatarInfo.nick)}</span>${row.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}<div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(row.rating)||0))}">${starFillMarkup(Number(row.rating)||0)}</div></div><span class="community-review-date">${escapeHtml(formatReviewDate(row.updated_at || row.created_at))}${escapeHtml(edited)}</span></div>${row.comment ? `<p class="community-review-comment">${escapeHtml(row.comment)}</p>` : ''}</div></article>`;
+      const profileAria = getCopy().publicProfileOpen.replace('{name}', avatarInfo.nick);
+      const titles = Array.isArray(row.equipped_titles) ? row.equipped_titles : [];
+      return `<article class="community-review"><button class="community-review-avatar community-profile-trigger" type="button" data-public-profile="${escapeAttr(row.user_id)}" aria-label="${escapeAttr(profileAria)}"${avatarInfo.avatarStyle}>${avatarInfo.avatarText}</button><div><div class="community-review-headline"><div><div class="community-review-identity-line"><button class="community-review-user community-profile-trigger" type="button" data-public-profile="${escapeAttr(row.user_id)}" aria-label="${escapeAttr(profileAria)}">${escapeHtml(avatarInfo.nick)}</button><span class="comment-title-list">${titleBadgesMarkup(titles, 'is-comment-title')}</span>${row.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}</div><div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(row.rating)||0))}">${starFillMarkup(Number(row.rating)||0)}</div></div><span class="community-review-date">${escapeHtml(formatReviewDate(row.updated_at || row.created_at))}${escapeHtml(edited)}</span></div>${row.comment ? `<p class="community-review-comment">${escapeHtml(row.comment)}</p>` : ''}</div></article>`;
     }).join('');
   }
 
@@ -3001,6 +3320,8 @@
     }
 
     renderAccount();
+    renderProfileTitles();
+    if (publicProfileData && publicProfileModal?.open) renderPublicProfile(publicProfileData);
     if (persist) localStorage.setItem(STORAGE_KEYS.language, currentLanguage);
   }
 
@@ -3114,6 +3435,11 @@
     paintAvatar(profileAvatarPreview, { ...getAccountProfile(), avatarDataUrl: '' });
   });
   saveLocalProfileButton?.addEventListener('click', saveProfileEditor);
+  profileTitleList?.addEventListener('click', event => {
+    const button = event.target.closest?.('[data-profile-title]');
+    if (button) toggleProfileTitle(button.dataset.profileTitle);
+  });
+  saveProfileTitlesButton?.addEventListener('click', () => { void saveEquippedTitles(); });
   guestGoToLoginButton?.addEventListener('click', () => leaveGuestMode({ openLogin: true }));
   forgotPassword.addEventListener('click', sendPasswordReset);
   recoveryForm.addEventListener('submit', submitRecoveryForm);
@@ -3253,6 +3579,22 @@
   document.getElementById('reviewLoginButton')?.addEventListener('click', () => {
     closeModal(reviewModal);
     if (guestMode) leaveGuestMode({ openLogin:true }); else { setAuthMode('login'); openModal(accountModal); }
+  });
+
+  document.addEventListener('click', event => {
+    const trigger = event.target.closest?.('[data-public-profile]');
+    if (!trigger) return;
+    const userId = trigger.dataset.publicProfile;
+    if (!userId) return;
+    event.preventDefault();
+    void openPublicProfile(userId);
+  });
+  document.getElementById('closePublicProfileModal')?.addEventListener('click', () => closeModal(publicProfileModal));
+  publicProfileModal?.addEventListener('click', event => { if (event.target === publicProfileModal) closeModal(publicProfileModal); });
+  publicProfileModal?.addEventListener('close', () => {
+    publicProfileUserId = null;
+    publicProfileData = null;
+    queueMicrotask(syncModalOpenClass);
   });
 
   document.getElementById('openAdminPanel')?.addEventListener('click', () => { void openAdminPanel(); });
