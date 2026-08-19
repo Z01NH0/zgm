@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.6.0';
+  const ZOINHO_CLOUD_BUILD = '1.7.0';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
-  console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`, { integratedGames: ['blood-machine', 'dead-signal', 'heroes-battle'] });
+  console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
   const STORAGE_KEYS = {
     theme: 'zoinho-games-theme',
@@ -399,7 +399,7 @@
     }
   };
 
-  const games = [
+  const FALLBACK_GAMES = [
     {
       id: 'chrono-shards',
       order: 1,
@@ -873,6 +873,18 @@
     }
   ];
 
+  let games = FALLBACK_GAMES.map(game => ({ ...game }));
+  let catalogSource = 'fallback';
+  const reviewStats = new Map();
+  let currentUserRole = 'user';
+  let reviewDialogGameId = null;
+  let reviewDialogOwnReview = null;
+  let reviewDraftRating = 0;
+  let adminEditingGameId = null;
+  let adminGamesCache = [];
+  let adminReviewsCache = [];
+  let adminLogsCache = [];
+
   const root = document.documentElement;
   const STORAGE_BRIDGE_PROTOCOL = 'zoinho-storage-v2';
   const STORAGE_BRIDGE_VERSION = 2;
@@ -880,26 +892,12 @@
   const CLOUD_WRITE_DELAY = 300;
   const BRIDGE_SNAPSHOT_REQUEST_DELAY = 500;
   const BRIDGE_HANDSHAKE_TIMEOUT = 12000;
-  const storageBridgeGames = new Map([
-    ['blood-machine', {
-      title: 'Blood Machine',
-      origin: 'https://blood-machine.vercel.app',
-      saveVersion: 1,
-      saveKeys: ['bloodMachineProgressUpdate12']
-    }],
-    ['dead-signal', {
-      title: 'Dead Signal',
-      origin: 'https://zombie-survival-six.vercel.app',
-      saveVersion: 1,
-      saveKeys: ['dead_signal_nightfall_v1']
-    }],
-    ['heroes-battle', {
-      title: 'Heroes Battle',
-      origin: 'https://heroes-battle-ultimate-version.vercel.app',
-      saveVersion: 1,
-      saveKeys: ['hb-rune-progression-v2', 'hb-reforged2-best']
-    }]
+  const FALLBACK_STORAGE_BRIDGE_GAMES = new Map([
+    ['blood-machine', { title: 'Blood Machine', origin: 'https://blood-machine.vercel.app', saveVersion: 1, saveKeys: ['bloodMachineProgressUpdate12'] }],
+    ['dead-signal', { title: 'Dead Signal', origin: 'https://zombie-survival-six.vercel.app', saveVersion: 1, saveKeys: ['dead_signal_nightfall_v1'] }],
+    ['heroes-battle', { title: 'Heroes Battle', origin: 'https://heroes-battle-ultimate-version.vercel.app', saveVersion: 1, saveKeys: ['hb-rune-progression-v2', 'hb-reforged2-best'] }]
   ]);
+  const storageBridgeGames = new Map(FALLBACK_STORAGE_BRIDGE_GAMES);
 
   const cloudGameRecords = new Map(
     [...storageBridgeGames.keys()].map(gameId => [gameId, {
@@ -968,6 +966,162 @@
     lastGameId: null,
     error: null
   };
+
+  function communityCopy() {
+    return currentLanguage === 'en' ? {
+      ratingEmpty: 'No ratings yet', ratingCount: n => `${n} rating${n === 1 ? '' : 's'}`,
+      rateGame: 'Rate this game', reviewsTitle: 'Community reviews', yourReview: 'Your review',
+      commentPlaceholder: 'What did you think of the game? (optional, up to 800 characters)',
+      publishReview: 'Publish review', updateReview: 'Update review', deleteReview: 'Delete my review',
+      loginToReview: 'Sign in to rate and comment.', loginAction: 'Sign in or create account',
+      reviewSaved: 'Review saved.', reviewDeleted: 'Review deleted.', reviewError: 'Could not save this review.',
+      reviewDeleteConfirm: 'Delete your review for this game?', profileRequired: 'Choose a nickname in your account profile before posting a review.', reviewHidden: 'This review was hidden by moderation. You can delete it, but it cannot be edited while hidden.', verified: 'Verified player', edited: 'edited',
+      noComments: 'No community reviews yet. Someone has to be first.', ratingAria: value => `${value.toFixed(1)} out of 5 stars`
+    } : {
+      ratingEmpty: 'Sem avaliações', ratingCount: n => `${n} avaliação${n === 1 ? '' : 'ões'}`,
+      rateGame: 'Avaliar este jogo', reviewsTitle: 'Avaliações da comunidade', yourReview: 'Sua avaliação',
+      commentPlaceholder: 'O que você achou do jogo? (opcional, até 800 caracteres)',
+      publishReview: 'Publicar avaliação', updateReview: 'Atualizar avaliação', deleteReview: 'Excluir minha avaliação',
+      loginToReview: 'Entre em uma conta para avaliar e comentar.', loginAction: 'Entrar ou criar conta',
+      reviewSaved: 'Avaliação salva.', reviewDeleted: 'Avaliação excluída.', reviewError: 'Não foi possível salvar esta avaliação.',
+      reviewDeleteConfirm: 'Excluir sua avaliação deste jogo?', profileRequired: 'Escolha um nickname no seu perfil antes de publicar uma avaliação.', reviewHidden: 'Esta avaliação foi ocultada pela moderação. Você pode excluí-la, mas não editá-la enquanto estiver oculta.', verified: 'Jogador verificado', edited: 'editado',
+      noComments: 'Ainda não há avaliações da comunidade. Alguém precisa inaugurar a seção.', ratingAria: value => `${value.toFixed(1).replace('.', ',')} de 5 estrelas`
+    };
+  }
+
+  function mapCatalogRow(row) {
+    const fallback = FALLBACK_GAMES.find(game => game.id === row.id) || {};
+    const value = (key, fallbackValue = '') => row[key] == null ? fallbackValue : row[key];
+    return {
+      id: row.id,
+      order: Number(value('order_index', fallback.order || 999)),
+      title: value('title', fallback.title || row.id),
+      url: value('url', fallback.url || '#'),
+      image: value('image_url', fallback.image || ''),
+      kicker: value('kicker', fallback.kicker || 'JOGO'),
+      creator: value('creator', fallback.creator || 'Z01NH0'),
+      categories: Array.isArray(row.categories) ? row.categories : (fallback.categories || []),
+      tags: {
+        'pt-BR': Array.isArray(row.tags_pt) ? row.tags_pt : (fallback.tags?.['pt-BR'] || []),
+        en: Array.isArray(row.tags_en) && row.tags_en.length ? row.tags_en : (Array.isArray(row.tags_pt) && row.tags_pt.length ? row.tags_pt : (fallback.tags?.en || fallback.tags?.['pt-BR'] || []))
+      },
+      mode: { 'pt-BR': row.mode_pt || fallback.mode?.['pt-BR'] || 'Singleplayer', en: row.mode_en || row.mode_pt || fallback.mode?.en || fallback.mode?.['pt-BR'] || 'Single-player' },
+      genres: { 'pt-BR': row.genres_pt || fallback.genres?.['pt-BR'] || '', en: row.genres_en || row.genres_pt || fallback.genres?.en || fallback.genres?.['pt-BR'] || '' },
+      short: { 'pt-BR': row.short_pt || fallback.short?.['pt-BR'] || '', en: row.short_en || row.short_pt || fallback.short?.en || fallback.short?.['pt-BR'] || '' },
+      description: { 'pt-BR': row.description_pt || fallback.description?.['pt-BR'] || '', en: row.description_en || row.description_pt || fallback.description?.en || fallback.description?.['pt-BR'] || '' },
+      platform: { 'pt-BR': row.platform_pt || fallback.platform?.['pt-BR'] || 'PC', en: row.platform_en || row.platform_pt || fallback.platform?.en || 'PC' },
+      featured: Boolean(row.featured),
+      published: row.published !== false,
+      datesAvailable: row.dates_available !== false,
+      vercelProjectId: row.vercel_project_id || null,
+      bridgeEnabled: Boolean(row.bridge_enabled),
+      bridgeOrigin: row.bridge_origin || null,
+      bridgeSaveVersion: Math.max(1, Number(row.bridge_save_version) || 1),
+      bridgeSaveKeys: Array.isArray(row.bridge_save_keys) ? row.bridge_save_keys.filter(Boolean) : []
+    };
+  }
+
+  function resetCloudRegistryFromGames() {
+    clearCloudQueue();
+    storageBridgeGames.clear();
+    if (catalogSource === 'cloud') {
+      for (const game of games) {
+        if (!game.bridgeEnabled || !game.bridgeOrigin || !game.bridgeSaveKeys?.length) continue;
+        storageBridgeGames.set(game.id, { title: game.title, origin: game.bridgeOrigin, saveVersion: game.bridgeSaveVersion || 1, saveKeys: [...game.bridgeSaveKeys] });
+      }
+    } else {
+      for (const [id, config] of FALLBACK_STORAGE_BRIDGE_GAMES) storageBridgeGames.set(id, { ...config, saveKeys: [...config.saveKeys] });
+    }
+    cloudGameRecords.clear();
+    bridgeGameRecords.clear();
+    for (const [gameId, config] of storageBridgeGames) {
+      cloudGameRecords.set(gameId, { state: 'idle', hasCloudSave: false, lastSyncAt: null, clientUpdatedAt: null, revision: null, saveVersion: config.saveVersion || 1, error: null });
+      bridgeGameRecords.set(gameId, { state: 'waiting', lastEventAt: null, error: null, detail: null, observedOrigin: null });
+    }
+    renderCloudState();
+  }
+
+  async function loadCatalogFromCloud({ rerender = true } = {}) {
+    if (!supabaseClient) return false;
+    try {
+      const { data, error } = await supabaseClient.from('games').select('*').eq('published', true).order('order_index', { ascending: true }).order('title', { ascending: true });
+      if (error) throw error;
+      if (!Array.isArray(data)) return false;
+      // Consulta bem-sucedida = Supabase é a fonte de verdade, mesmo com zero jogos publicados.
+      // O fallback só entra quando a tabela/API realmente está indisponível.
+      games = data.map(mapCatalogRow).sort((a,b) => a.order - b.order || a.title.localeCompare(b.title, currentLanguage, { sensitivity: 'base' }));
+      catalogSource = 'cloud';
+      resetCloudRegistryFromGames();
+      if (authUser) void probeCloudAccess(authUser.id);
+      if (rerender) {
+        renderStats(); renderFeatured(); renderCatalog();
+        void loadReviewStats();
+        void loadGameDates();
+      }
+      return true;
+    } catch (error) {
+      console.warn('[ZOINHO Catalog] Catálogo dinâmico indisponível; usando fallback local.', error);
+      return false;
+    }
+  }
+
+  async function loadReviewStats({ rerender = true } = {}) {
+    if (!supabaseClient) return false;
+    try {
+      const { data, error } = await supabaseClient.rpc('zoinho_get_review_stats');
+      if (error) throw error;
+      reviewStats.clear();
+      for (const row of data || []) reviewStats.set(row.game_id, { average: Number(row.average_rating) || 0, count: Number(row.review_count) || 0 });
+      if (rerender) renderCatalog();
+      return true;
+    } catch (error) {
+      console.warn('[ZOINHO Reviews] Estatísticas indisponíveis.', error);
+      return false;
+    }
+  }
+
+  function starFillMarkup(value = 0) {
+    const safe = Math.max(0, Math.min(5, Number(value) || 0));
+    return Array.from({ length: 5 }, (_, index) => {
+      const fill = Math.max(0, Math.min(1, safe - index)) * 100;
+      return `<span class="rating-star" aria-hidden="true"><span class="rating-star-empty">☆</span><span class="rating-star-fill" style="width:${fill}%">★</span></span>`;
+    }).join('');
+  }
+
+  function ratingSummaryMarkup(gameId) {
+    const copy = communityCopy();
+    const stats = reviewStats.get(gameId) || { average: 0, count: 0 };
+    const label = stats.count ? `${stats.average.toFixed(1).replace('.', currentLanguage === 'en' ? '.' : ',')} · ${copy.ratingCount(stats.count)}` : copy.ratingEmpty;
+    return `<div class="game-rating-row"><button class="rating-summary" type="button" data-open-reviews="${gameId}" aria-label="${copy.reviewsTitle}: ${label}"><span class="rating-stars">${starFillMarkup(stats.average)}</span><span class="rating-number">${stats.count ? stats.average.toFixed(1).replace('.', currentLanguage === 'en' ? '.' : ',') : '—'}</span><span class="rating-count">${stats.count ? `(${stats.count})` : ''}</span></button><button class="review-star-button" type="button" data-rate-game="${gameId}" aria-label="${copy.rateGame}" title="${copy.rateGame}">☆</button></div>`;
+  }
+
+  async function loadCurrentUserRole(expectedUserId = authUser?.id || null) {
+    currentUserRole = 'user';
+    renderAdminAccess();
+    if (!supabaseClient || !expectedUserId) return currentUserRole;
+    try {
+      const { data, error } = await supabaseClient.from('user_roles').select('role').eq('user_id', expectedUserId).maybeSingle();
+      if (error) throw error;
+      if (authUser?.id !== expectedUserId) return 'user';
+      currentUserRole = ['admin','moderator'].includes(data?.role) ? data.role : 'user';
+    } catch (error) {
+      console.warn('[ZOINHO Admin] Não foi possível carregar o cargo.', error);
+      currentUserRole = 'user';
+    }
+    renderAdminAccess();
+    return currentUserRole;
+  }
+
+  function renderAdminAccess() {
+    const button = document.getElementById('openAdminPanel');
+    const badge = document.getElementById('accountRoleBadge');
+    const allowed = Boolean(authUser && ['admin','moderator'].includes(currentUserRole));
+    if (button) button.hidden = !allowed;
+    if (badge) {
+      badge.hidden = !allowed;
+      badge.textContent = currentUserRole === 'admin' ? 'ADMINISTRADOR' : 'MODERADOR';
+    }
+  }
 
   function settleAuthReady() {
     if (authReadyResolved) return;
@@ -2007,6 +2161,7 @@
       setAccountTab(accountTab);
     }
     renderCloudState();
+    renderAdminAccess();
     syncEntryGate();
   }
 
@@ -2051,6 +2206,8 @@
       profileLoading = false;
       clearCloudQueue();
       resetCloudSessionState();
+      currentUserRole = 'user';
+      renderAdminAccess();
       if (wasInitialized) {
         for (const [gameId, active] of activeBridgeWindows) {
           if (active.userId !== currentId) setBridgeState('account-changed', gameId);
@@ -2064,6 +2221,7 @@
     renderAccount();
     if (authUser) {
       void loadCloudProfile(authUser.id);
+      void loadCurrentUserRole(authUser.id);
       void probeCloudAccess(authUser.id);
       if (accountModal?.open && !recoveryMode) closeModal(accountModal);
     }
@@ -2386,28 +2544,305 @@
     toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2400);
   }
 
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
+  }
+
+  function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
+
+  function formatReviewDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(currentLanguage, { dateStyle:'medium', timeStyle:'short' }).format(date);
+  }
+
+  function setReviewDraftRating(value, { preview = false } = {}) {
+    const picker = document.getElementById('ratingPicker');
+    const stars = document.getElementById('ratingPickerStars');
+    const valueLabel = document.getElementById('reviewDraftValue');
+    const saveButton = document.getElementById('saveReviewButton');
+    const safe = Math.max(0, Math.min(5, Math.round((Number(value) || 0) * 2) / 2));
+    if (!preview) reviewDraftRating = safe;
+    const shown = preview ? safe : reviewDraftRating;
+    if (stars) stars.innerHTML = starFillMarkup(shown);
+    if (picker) {
+      picker.dataset.previewRating = String(shown);
+      picker.setAttribute('aria-valuenow', String(Math.max(.5, shown || .5)));
+      picker.setAttribute('aria-valuetext', shown ? communityCopy().ratingAria(shown) : communityCopy().ratingEmpty);
+    }
+    if (valueLabel) valueLabel.textContent = shown ? `${shown.toFixed(1).replace('.', currentLanguage === 'en' ? '.' : ',')} / 5` : '— / 5';
+    if (saveButton) saveButton.disabled = !authUser || reviewDraftRating < .5;
+  }
+
+  function ratingFromPointer(event, element) {
+    const target = element?.querySelector?.('.rating-stars') || element;
+    const rect = target.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+    return Math.max(.5, Math.min(5, Math.ceil((x / Math.max(1, rect.width)) * 10) / 2));
+  }
+
+  function renderReviewOverview(gameId) {
+    const stats = reviewStats.get(gameId) || { average:0, count:0 };
+    const copy = communityCopy();
+    const avgNumber = document.getElementById('reviewAverageNumber');
+    const avgStars = document.getElementById('reviewAverageStars');
+    const avgCount = document.getElementById('reviewAverageCount');
+    if (avgNumber) avgNumber.textContent = stats.count ? stats.average.toFixed(1).replace('.', currentLanguage === 'en' ? '.' : ',') : '—';
+    if (avgStars) avgStars.innerHTML = starFillMarkup(stats.average);
+    if (avgCount) avgCount.textContent = stats.count ? copy.ratingCount(stats.count) : copy.ratingEmpty;
+  }
+
+  function renderCommunityReviews(rows = []) {
+    const root = document.getElementById('communityReviewList');
+    if (!root) return;
+    const copy = communityCopy();
+    if (!rows.length) {
+      root.innerHTML = `<div class="community-review-empty">${escapeHtml(copy.noComments)}</div>`;
+      return;
+    }
+    root.innerHTML = rows.map(row => {
+      const nick = String(row.nickname || 'Jogador').trim() || 'Jogador';
+      const avatar = String(row.avatar_data_url || '');
+      const initial = [...nick][0]?.toUpperCase() || 'J';
+      const avatarStyle = avatar.startsWith('data:image/') ? ` style="background-image:url('${escapeAttr(avatar)}')"` : '';
+      const avatarText = avatarStyle ? '' : escapeHtml(initial);
+      const edited = row.updated_at && row.created_at && Math.abs(new Date(row.updated_at) - new Date(row.created_at)) > 1500 ? ` · ${copy.edited}` : '';
+      return `<article class="community-review"><div class="community-review-avatar"${avatarStyle}>${avatarText}</div><div><div class="community-review-headline"><div><span class="community-review-user">${escapeHtml(nick)}</span>${row.verified_player ? `<span class="verified-badge">✓ ${escapeHtml(copy.verified)}</span>` : ''}<div class="rating-stars community-review-stars" aria-label="${escapeAttr(copy.ratingAria(Number(row.rating)||0))}">${starFillMarkup(Number(row.rating)||0)}</div></div><span class="community-review-date">${escapeHtml(formatReviewDate(row.updated_at || row.created_at))}${escapeHtml(edited)}</span></div>${row.comment ? `<p class="community-review-comment">${escapeHtml(row.comment)}</p>` : ''}</div></article>`;
+    }).join('');
+  }
+
+  function renderReviewEditor() {
+    const copy = communityCopy();
+    const guest = !authUser;
+    const picker = document.getElementById('ratingPicker');
+    const textarea = document.getElementById('reviewComment');
+    const footer = document.querySelector('#yourReviewCard .review-editor-footer');
+    const loginNotice = document.getElementById('reviewLoginNotice');
+    const saveButton = document.getElementById('saveReviewButton');
+    const deleteButton = document.getElementById('deleteOwnReview');
+    const label = document.getElementById('yourReviewLabel');
+    if (label) label.textContent = copy.yourReview;
+    if (document.getElementById('reviewLoginText')) document.getElementById('reviewLoginText').textContent = copy.loginToReview;
+    if (document.getElementById('reviewLoginButton')) document.getElementById('reviewLoginButton').textContent = copy.loginAction;
+    if (textarea) textarea.placeholder = copy.commentPlaceholder;
+    if (picker) picker.hidden = guest;
+    if (textarea) textarea.hidden = guest;
+    if (footer) footer.hidden = guest;
+    if (loginNotice) loginNotice.hidden = !guest;
+    if (saveButton) saveButton.textContent = reviewDialogOwnReview ? copy.updateReview : copy.publishReview;
+    if (deleteButton) {
+      deleteButton.textContent = copy.deleteReview;
+      deleteButton.hidden = !reviewDialogOwnReview;
+    }
+    const moderationNotice = document.getElementById('reviewModerationNotice');
+    const hiddenByModeration = Boolean(reviewDialogOwnReview?.is_hidden);
+    if (moderationNotice) { moderationNotice.hidden = !hiddenByModeration; moderationNotice.textContent = copy.reviewHidden; }
+    if (picker) picker.setAttribute('aria-disabled', String(hiddenByModeration));
+    if (textarea) textarea.disabled = hiddenByModeration;
+    if (saveButton && hiddenByModeration) saveButton.disabled = true;
+    setReviewDraftRating(reviewDialogOwnReview ? Number(reviewDialogOwnReview.rating) : 0);
+    if (textarea) textarea.value = reviewDialogOwnReview?.comment || '';
+    if (saveButton && hiddenByModeration) saveButton.disabled = true;
+    const count = document.getElementById('reviewCharCount');
+    if (count) count.textContent = `${textarea?.value.length || 0}/800`;
+  }
+
+  async function loadReviewDialog(gameId) {
+    if (!supabaseClient) return;
+    const copy = communityCopy();
+    const list = document.getElementById('communityReviewList');
+    if (list) list.innerHTML = '<div class="community-review-empty">Carregando...</div>';
+    try {
+      const reviewRequest = supabaseClient.rpc('zoinho_get_game_reviews', { p_game_id: gameId, p_limit: 50, p_offset: 0 });
+      const ownRequest = authUser ? supabaseClient.from('game_reviews').select('id,user_id,game_id,rating,comment,is_hidden,created_at,updated_at').eq('user_id', authUser.id).eq('game_id', gameId).maybeSingle() : Promise.resolve({ data:null, error:null });
+      const [reviewsResult, ownResult] = await Promise.all([reviewRequest, ownRequest]);
+      if (reviewsResult.error) throw reviewsResult.error;
+      if (ownResult.error) console.warn('[ZOINHO Reviews] Falha ao carregar a própria avaliação.', ownResult.error);
+      reviewDialogOwnReview = ownResult.data || null;
+      renderCommunityReviews(reviewsResult.data || []);
+      renderReviewEditor();
+      renderReviewOverview(gameId);
+      document.getElementById('communityReviewsTitle').textContent = copy.reviewsTitle;
+    } catch (error) {
+      console.warn('[ZOINHO Reviews] Falha ao carregar avaliações.', error);
+      if (list) list.innerHTML = `<div class="community-review-empty">${escapeHtml(copy.reviewError)}</div>`;
+    }
+  }
+
+  async function openReviewDialog(gameId, { focusEditor = false } = {}) {
+    const game = games.find(item => item.id === gameId);
+    const modal = document.getElementById('reviewModal');
+    if (!game || !modal) return;
+    reviewDialogGameId = gameId;
+    reviewDialogOwnReview = null;
+    reviewDraftRating = 0;
+    document.getElementById('reviewModalTitle').textContent = communityCopy().reviewsTitle;
+    document.getElementById('reviewGameName').textContent = game.title;
+    renderReviewOverview(gameId);
+    renderReviewEditor();
+    openModal(modal);
+    await loadReviewDialog(gameId);
+    if (focusEditor) document.getElementById('yourReviewCard')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  async function saveReview() {
+    if (!authUser || !supabaseClient || !reviewDialogGameId || reviewDraftRating < .5 || reviewDialogOwnReview?.is_hidden) return;
+    let profile = getAccountProfile();
+    if (!(cloudProfileUserId === authUser.id && cloudProfile?.exists)) profile = await loadCloudProfile(authUser.id) || profile;
+    if (!profile?.nickname || !profile?.exists) {
+      showToast(communityCopy().profileRequired);
+      closeModal(document.getElementById('reviewModal'));
+      accountTab = 'profile';
+      renderAccount();
+      openModal(accountModal);
+      return;
+    }
+    const textarea = document.getElementById('reviewComment');
+    const comment = String(textarea?.value || '').trim().slice(0,800);
+    const button = document.getElementById('saveReviewButton');
+    button.disabled = true;
+    try {
+      const { error } = await supabaseClient.from('game_reviews').upsert({ user_id:authUser.id, game_id:reviewDialogGameId, rating:reviewDraftRating, comment, is_hidden:false }, { onConflict:'user_id,game_id' });
+      if (error) throw error;
+      showToast(communityCopy().reviewSaved);
+      await loadReviewStats({ rerender:true });
+      await loadReviewDialog(reviewDialogGameId);
+    } catch (error) {
+      console.warn('[ZOINHO Reviews] Falha ao salvar avaliação.', error);
+      showToast(communityCopy().reviewError);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function deleteOwnReview() {
+    if (!authUser || !reviewDialogOwnReview || !supabaseClient) return;
+    if (!confirm(communityCopy().reviewDeleteConfirm)) return;
+    try {
+      const { error } = await supabaseClient.from('game_reviews').delete().eq('id', reviewDialogOwnReview.id).eq('user_id', authUser.id);
+      if (error) throw error;
+      reviewDialogOwnReview = null;
+      showToast(communityCopy().reviewDeleted);
+      await loadReviewStats({ rerender:true });
+      await loadReviewDialog(reviewDialogGameId);
+    } catch (error) {
+      console.warn('[ZOINHO Reviews] Falha ao excluir avaliação.', error);
+      showToast(communityCopy().reviewError);
+    }
+  }
+
+  function csvList(value) { return String(value || '').split(',').map(item => item.trim()).filter(Boolean); }
+  function normalizedOrigin(value) { try { return new URL(String(value || '').trim()).origin; } catch (_) { return ''; } }
+
+  function setAdminTab(tab) {
+    const allowedTabs = currentUserRole === 'admin' ? ['overview','games','reviews','logs'] : ['overview','reviews'];
+    const target = allowedTabs.includes(tab) ? tab : 'overview';
+    document.querySelectorAll('[data-admin-tab]').forEach(button => {
+      const hiddenForRole = currentUserRole !== 'admin' && ['games','logs'].includes(button.dataset.adminTab);
+      button.hidden = hiddenForRole;
+      button.classList.toggle('is-active', !hiddenForRole && button.dataset.adminTab === target);
+    });
+    document.querySelectorAll('[data-admin-pane]').forEach(pane => { pane.hidden = pane.dataset.adminPane !== target; });
+  }
+
+  async function loadAdminGames() {
+    if (!supabaseClient || currentUserRole !== 'admin') { adminGamesCache = []; renderAdminGames(); return []; }
+    const { data, error } = await supabaseClient.from('games').select('*').order('order_index',{ascending:true}).order('title',{ascending:true});
+    if (error) { console.warn('[ZOINHO Admin] Falha ao carregar jogos.',error); return []; }
+    adminGamesCache = data || [];
+    renderAdminGames();
+    return adminGamesCache;
+  }
+
+  function renderAdminGames() {
+    const root = document.getElementById('adminGamesList'); if (!root) return;
+    if (!adminGamesCache.length) { root.innerHTML='<div class="community-review-empty">Nenhum jogo carregado.</div>'; return; }
+    root.innerHTML = adminGamesCache.map(game => `<article class="admin-row"><div class="admin-row-main"><div class="admin-row-title">${escapeHtml(game.title)}<span class="admin-status ${game.published?'live':'hidden'}">${game.published?'PUBLICADO':'OCULTO'}</span>${game.bridge_enabled?'<span class="admin-status live">CLOUD</span>':''}</div><div class="admin-row-meta">${escapeHtml(game.id)} · ordem ${Number(game.order_index)||999} · ${escapeHtml(game.url)}</div></div><div class="admin-row-actions"><button class="admin-mini-btn" data-admin-edit-game="${escapeAttr(game.id)}">Editar</button><button class="admin-mini-btn ${game.published?'warning':''}" data-admin-toggle-game="${escapeAttr(game.id)}">${game.published?'Ocultar':'Publicar'}</button></div></article>`).join('');
+  }
+
+  async function loadAdminReviews() {
+    if (!supabaseClient || !['admin','moderator'].includes(currentUserRole)) { adminReviewsCache=[]; renderAdminReviews(); return []; }
+    const { data,error }=await supabaseClient.rpc('zoinho_admin_get_reviews',{p_limit:200,p_offset:0});
+    if(error){console.warn('[ZOINHO Admin] Falha ao carregar avaliações.',error);return []}
+    adminReviewsCache=data||[]; renderAdminReviews(); return adminReviewsCache;
+  }
+
+  function renderAdminReviews() {
+    const root=document.getElementById('adminReviewsList'); if(!root)return;
+    if(!adminReviewsCache.length){root.innerHTML='<div class="community-review-empty">Nenhuma avaliação encontrada.</div>';return}
+    root.innerHTML=adminReviewsCache.map(review=>`<article class="admin-row"><div class="admin-row-main"><div class="admin-row-title">${escapeHtml(review.nickname)} · ${Number(review.rating).toFixed(1).replace('.',',')} ★ <span class="admin-status ${review.is_hidden?'hidden':'live'}">${review.is_hidden?'OCULTA':'VISÍVEL'}</span></div><div class="admin-row-meta">${escapeHtml(review.game_title)} · ${escapeHtml(formatReviewDate(review.updated_at))}</div>${review.comment?`<div class="admin-row-comment">${escapeHtml(review.comment)}</div>`:''}</div><div class="admin-row-actions">${review.comment?`<button class="admin-mini-btn" data-admin-clear-comment="${escapeAttr(review.id)}">Remover comentário</button>`:''}<button class="admin-mini-btn warning" data-admin-hide-review="${escapeAttr(review.id)}" data-hidden="${review.is_hidden?'1':'0'}">${review.is_hidden?'Reexibir':'Ocultar'}</button><button class="admin-mini-btn danger" data-admin-delete-review="${escapeAttr(review.id)}">Excluir avaliação</button></div></article>`).join('');
+  }
+
+  async function loadAdminLogs() {
+    if (!supabaseClient || currentUserRole !== 'admin') { adminLogsCache=[]; renderAdminLogs(); return []; }
+    const { data,error }=await supabaseClient.from('admin_audit_log').select('id,actor_user_id,actor_role,action,entity_type,entity_id,details,created_at').order('created_at',{ascending:false}).limit(100);
+    if(error){console.warn('[ZOINHO Admin] Falha ao carregar logs.',error);return []}
+    adminLogsCache=data||[]; renderAdminLogs(); return adminLogsCache;
+  }
+
+  function renderAdminLogs(){const root=document.getElementById('adminLogsList');if(!root)return;if(!adminLogsCache.length){root.innerHTML='<div class="community-review-empty">Nenhum log administrativo ainda.</div>';return}root.innerHTML=adminLogsCache.map(log=>`<article class="admin-row"><div class="admin-row-main"><div class="admin-row-title"><span class="admin-log-action">${escapeHtml(String(log.action||'').toUpperCase())}</span> · ${escapeHtml(log.entity_type||'')}</div><div class="admin-row-meta">${escapeHtml(formatReviewDate(log.created_at))} · ${escapeHtml(log.actor_role||'')} · ${escapeHtml(log.entity_id||'—')}</div><div class="admin-row-comment">${escapeHtml(JSON.stringify(log.details||{}))}</div></div></article>`).join('')}
+
+  function renderAdminOverview(){const gamesCount=adminGamesCache.length,published=adminGamesCache.filter(g=>g.published).length,hidden=adminReviewsCache.filter(r=>r.is_hidden).length;document.getElementById('adminMetricGames').textContent=String(gamesCount||games.length);document.getElementById('adminMetricPublished').textContent=String(gamesCount?published:games.length);document.getElementById('adminMetricReviews').textContent=String(adminReviewsCache.length);document.getElementById('adminMetricHidden').textContent=String(hidden);document.getElementById('adminRoleSummary').textContent=currentUserRole==='admin'?'Administrador: catálogo, Cloud Save, avaliações, exclusões e logs.':'Moderador: avaliações e comentários.'}
+
+  async function openAdminPanel(){if(!authUser||!['admin','moderator'].includes(currentUserRole))return;const modal=document.getElementById('adminModal');setAdminTab('overview');openModal(modal);await Promise.all([currentUserRole==='admin'?loadAdminGames():Promise.resolve([]),loadAdminReviews(),currentUserRole==='admin'?loadAdminLogs():Promise.resolve([])]);renderAdminOverview()}
+
+  function clearAdminGameForm(){adminEditingGameId=null;const form=document.getElementById('adminGameForm');form?.reset();document.getElementById('adminGameOrder').value='999';document.getElementById('adminGameCreator').value='Z01NH0';document.getElementById('adminGameModePt').value='Singleplayer';document.getElementById('adminGameModeEn').value='Single-player';document.getElementById('adminGamePlatformPt').value='PC';document.getElementById('adminGamePlatformEn').value='PC';document.getElementById('adminGameBridgeVersion').value='1';document.getElementById('adminGamePublished').checked=true;document.getElementById('adminGameDatesAvailable').checked=true;document.getElementById('adminGameId').disabled=false;document.getElementById('adminDeleteGame').hidden=true;document.getElementById('adminCoverPreview').src='';document.getElementById('adminGameModalTitle').textContent='Adicionar jogo';document.getElementById('adminGameError').hidden=true}
+
+  function openAdminGameEditor(id=null){if(currentUserRole!=='admin')return;clearAdminGameForm();const modal=document.getElementById('adminGameModal');if(id){const g=adminGamesCache.find(x=>x.id===id);if(!g)return;adminEditingGameId=id;document.getElementById('adminGameModalTitle').textContent=`Editar ${g.title}`;document.getElementById('adminGameId').value=g.id;document.getElementById('adminGameId').disabled=true;document.getElementById('adminGameOrder').value=g.order_index??999;document.getElementById('adminGameTitle').value=g.title||'';document.getElementById('adminGameUrl').value=g.url||'';document.getElementById('adminGameKicker').value=g.kicker||'';document.getElementById('adminGameCreator').value=g.creator||'Z01NH0';document.getElementById('adminGameCategories').value=(g.categories||[]).join(', ');document.getElementById('adminGameTagsPt').value=(g.tags_pt||[]).join(', ');document.getElementById('adminGameTagsEn').value=(g.tags_en||[]).join(', ');document.getElementById('adminGameModePt').value=g.mode_pt||'';document.getElementById('adminGameModeEn').value=g.mode_en||'';document.getElementById('adminGameGenresPt').value=g.genres_pt||'';document.getElementById('adminGameGenresEn').value=g.genres_en||'';document.getElementById('adminGameShortPt').value=g.short_pt||'';document.getElementById('adminGameShortEn').value=g.short_en||'';document.getElementById('adminGameDescriptionPt').value=g.description_pt||'';document.getElementById('adminGameDescriptionEn').value=g.description_en||'';document.getElementById('adminGamePlatformPt').value=g.platform_pt||'PC';document.getElementById('adminGamePlatformEn').value=g.platform_en||'PC';document.getElementById('adminGameImageUrl').value=g.image_url||'';document.getElementById('adminCoverPreview').src=g.image_url||'';document.getElementById('adminGameVercelProjectId').value=g.vercel_project_id||'';document.getElementById('adminGamePublished').checked=!!g.published;document.getElementById('adminGameFeatured').checked=!!g.featured;document.getElementById('adminGameDatesAvailable').checked=g.dates_available!==false;document.getElementById('adminGameBridgeEnabled').checked=!!g.bridge_enabled;document.getElementById('adminGameBridgeOrigin').value=g.bridge_origin||'';document.getElementById('adminGameBridgeVersion').value=g.bridge_save_version||1;document.getElementById('adminGameBridgeKeys').value=(g.bridge_save_keys||[]).join(', ');document.getElementById('adminDeleteGame').hidden=false}openModal(modal)}
+
+  function managedCoverPath(url) {
+    const marker = '/storage/v1/object/public/game-covers/';
+    const value = String(url || '');
+    const index = value.indexOf(marker);
+    if (index < 0) return null;
+    try { return decodeURIComponent(value.slice(index + marker.length).split('?')[0]); } catch (_) { return value.slice(index + marker.length).split('?')[0]; }
+  }
+
+  async function removeManagedCover(url) {
+    const path = managedCoverPath(url);
+    if (!path || !supabaseClient) return;
+    const { error } = await supabaseClient.storage.from('game-covers').remove([path]);
+    if (error) console.warn('[ZOINHO Admin] Não foi possível remover capa antiga.', error);
+  }
+
+  async function uploadAdminCover(gameId,file){if(!file)return null;const allowed={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'};const ext=allowed[file.type];if(!ext)throw new Error('Use PNG, JPG ou WEBP.');if(file.size>5*1024*1024)throw new Error('A capa deve ter no máximo 5 MB.');const path=`${gameId}/${Date.now()}-${crypto.randomUUID?.()||Math.random().toString(36).slice(2)}.${ext}`;const {error}=await supabaseClient.storage.from('game-covers').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(error)throw error;return supabaseClient.storage.from('game-covers').getPublicUrl(path).data.publicUrl}
+
+  async function saveAdminGame(event){event.preventDefault();if(currentUserRole!=='admin'||!supabaseClient)return;const errorEl=document.getElementById('adminGameError');errorEl.hidden=true;const id=(adminEditingGameId||document.getElementById('adminGameId').value).trim().toLowerCase();if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id)){errorEl.textContent='ID inválido. Use letras minúsculas, números e hífens.';errorEl.hidden=false;return}try{const previousGame=adminEditingGameId?adminGamesCache.find(x=>x.id===adminEditingGameId):null;const oldImageUrl=previousGame?.image_url||'';let imageUrl=document.getElementById('adminGameImageUrl').value.trim();const file=document.getElementById('adminGameCoverFile').files?.[0];if(file)imageUrl=await uploadAdminCover(id,file);const bridgeEnabled=document.getElementById('adminGameBridgeEnabled').checked;const payload={id,order_index:Number(document.getElementById('adminGameOrder').value)||999,title:document.getElementById('adminGameTitle').value.trim(),url:document.getElementById('adminGameUrl').value.trim(),image_url:imageUrl,kicker:document.getElementById('adminGameKicker').value.trim()||'JOGO',creator:document.getElementById('adminGameCreator').value.trim()||'Z01NH0',categories:csvList(document.getElementById('adminGameCategories').value),tags_pt:csvList(document.getElementById('adminGameTagsPt').value),tags_en:csvList(document.getElementById('adminGameTagsEn').value),mode_pt:document.getElementById('adminGameModePt').value.trim()||'Singleplayer',mode_en:document.getElementById('adminGameModeEn').value.trim()||'Single-player',genres_pt:document.getElementById('adminGameGenresPt').value.trim(),genres_en:document.getElementById('adminGameGenresEn').value.trim(),short_pt:document.getElementById('adminGameShortPt').value.trim(),short_en:document.getElementById('adminGameShortEn').value.trim(),description_pt:document.getElementById('adminGameDescriptionPt').value.trim(),description_en:document.getElementById('adminGameDescriptionEn').value.trim(),platform_pt:document.getElementById('adminGamePlatformPt').value.trim()||'PC',platform_en:document.getElementById('adminGamePlatformEn').value.trim()||'PC',published:document.getElementById('adminGamePublished').checked,featured:document.getElementById('adminGamePublished').checked&&document.getElementById('adminGameFeatured').checked,dates_available:document.getElementById('adminGameDatesAvailable').checked,vercel_project_id:document.getElementById('adminGameVercelProjectId').value.trim()||null,bridge_enabled:bridgeEnabled,bridge_origin:bridgeEnabled?normalizedOrigin(document.getElementById('adminGameBridgeOrigin').value):null,bridge_save_version:Math.max(1,Number(document.getElementById('adminGameBridgeVersion').value)||1),bridge_save_keys:bridgeEnabled?csvList(document.getElementById('adminGameBridgeKeys').value):[]};if(!payload.title||!/^https?:\/\//.test(payload.url))throw new Error('Nome e URL HTTPS/HTTP válidos são obrigatórios.');if(bridgeEnabled&&(!/^https?:\/\//.test(payload.bridge_origin||'')||!payload.bridge_save_keys.length))throw new Error('Cloud Save exige origin e pelo menos uma save key.');if(payload.featured){const {error:clearError}=await supabaseClient.from('games').update({featured:false}).neq('id',id).eq('featured',true);if(clearError)throw clearError}const {error}=await supabaseClient.from('games').upsert(payload,{onConflict:'id'});if(error)throw error;if(file&&oldImageUrl&&oldImageUrl!==imageUrl)await removeManagedCover(oldImageUrl);closeModal(document.getElementById('adminGameModal'));showToast('Jogo salvo no catálogo.');await loadAdminGames();await loadCatalogFromCloud({rerender:true});renderAdminOverview()}catch(error){console.warn('[ZOINHO Admin] Falha ao salvar jogo.',error);errorEl.textContent=error.message||String(error);errorEl.hidden=false}}
+
+  async function toggleAdminGamePublished(id){if(currentUserRole!=='admin')return;const g=adminGamesCache.find(x=>x.id===id);if(!g)return;const changes=g.published?{published:false,featured:false}:{published:true};const {error}=await supabaseClient.from('games').update(changes).eq('id',id);if(error)return showToast(error.message);await loadAdminGames();await loadCatalogFromCloud({rerender:true});renderAdminOverview()}
+
+  async function deleteAdminGame(){if(currentUserRole!=='admin'||!adminEditingGameId)return;const g=adminGamesCache.find(x=>x.id===adminEditingGameId);if(!confirm(`Excluir definitivamente "${g?.title||adminEditingGameId}"? Avaliações desse jogo também serão removidas. Para só tirar do catálogo, prefira Ocultar.`))return;const oldImageUrl=g?.image_url||'';const {error}=await supabaseClient.from('games').delete().eq('id',adminEditingGameId);if(error)return showToast(error.message);await removeManagedCover(oldImageUrl);closeModal(document.getElementById('adminGameModal'));showToast('Jogo excluído.');await loadAdminGames();await loadCatalogFromCloud({rerender:true});await loadAdminReviews();renderAdminOverview()}
+
+  async function moderateReview(id,hide){if(!['admin','moderator'].includes(currentUserRole))return;const {error}=await supabaseClient.from('game_reviews').update({is_hidden:hide}).eq('id',id);if(error)return showToast(error.message);await loadAdminReviews();await loadReviewStats({rerender:true});renderAdminOverview()}
+  async function adminClearReviewComment(id){if(!['admin','moderator'].includes(currentUserRole)||!confirm('Remover somente o comentário e manter a nota desta avaliação?'))return;const {error}=await supabaseClient.from('game_reviews').update({comment:''}).eq('id',id);if(error)return showToast(error.message);await loadAdminReviews();if(reviewDialogGameId)await loadReviewDialog(reviewDialogGameId);showToast('Comentário removido.');}
+  async function adminDeleteReview(id){if(!['admin','moderator'].includes(currentUserRole)||!confirm('Excluir definitivamente esta avaliação?'))return;const {error}=await supabaseClient.from('game_reviews').delete().eq('id',id);if(error)return showToast(error.message);await loadAdminReviews();await loadReviewStats({rerender:true});renderAdminOverview()}
+
   function createCard(game) {
     const copy = getCopy();
-    const tags = game.tags[currentLanguage] || game.tags['pt-BR'];
+    const tags = game.tags?.[currentLanguage] || game.tags?.['pt-BR'] || [];
     const platform = game.platform?.[currentLanguage] || 'PC';
+    const short = game.short?.[currentLanguage] || game.short?.['pt-BR'] || '';
     return `
-      <article class="game-card" data-game="${game.id}" data-categories="${game.categories.join(' ')}">
+      <article class="game-card" data-game="${escapeAttr(game.id)}" data-categories="${escapeAttr((game.categories || []).join(' '))}">
         <div class="game-art">
-          <img class="cover-image" src="${game.image}" alt="Capa de ${game.title}" loading="lazy" />
-          <div class="art-topline"><span class="game-number">${String(game.order).padStart(2, '0')}</span><span>${game.kicker}</span></div>
-          <span class="art-title">${game.title}</span>
+          <img class="cover-image" src="${escapeAttr(game.image || '')}" alt="Capa de ${escapeAttr(game.title)}" loading="lazy" />
+          <div class="art-topline"><span class="game-number">${String(game.order || 0).padStart(2, '0')}</span><span>${escapeHtml(game.kicker || 'JOGO')}</span></div>
+          <span class="art-title">${escapeHtml(game.title)}</span>
         </div>
         <div class="game-content">
-          <div class="game-meta"><span class="platform-badge">${platform}</span><span class="availability"><i></i><span>${copy.available}</span></span></div>
-          <h3>${game.title}</h3>
-          <p>${game.short[currentLanguage]}</p>
-          <div class="genre-list" aria-label="${copy.genres}">${tags.map(tag => `<span>${tag}</span>`).join('')}</div>
+          <div class="game-meta"><span class="platform-badge">${escapeHtml(platform)}</span><span class="availability"><i></i><span>${escapeHtml(copy.available)}</span></span></div>
+          <h3>${escapeHtml(game.title)}</h3>
+          ${ratingSummaryMarkup(game.id)}
+          <p>${escapeHtml(short)}</p>
+          <div class="genre-list" aria-label="${escapeAttr(copy.genres)}">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
           <div class="game-actions">
-            <a class="button button-primary button-play" href="${game.url}" target="_blank" rel="noopener noreferrer" data-launch-game="${game.id}">
+            <a class="button button-primary button-play" href="${escapeAttr(game.url)}" target="_blank" rel="noopener noreferrer" data-launch-game="${escapeAttr(game.id)}">
               <svg class="icon play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
-              <span>${copy.playNow}</span>
+              <span>${escapeHtml(copy.playNow)}</span>
             </a>
-            <button class="button button-square game-details" type="button" data-game-id="${game.id}" aria-label="Ver detalhes de ${game.title}">
+            <button class="button button-square game-details" type="button" data-game-id="${escapeAttr(game.id)}" aria-label="Ver detalhes de ${escapeAttr(game.title)}">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg>
             </button>
           </div>
@@ -2421,11 +2856,14 @@
     document.querySelectorAll('.game-details').forEach(button => {
       button.addEventListener('click', () => openGameDetails(button.dataset.gameId));
     });
+    document.querySelectorAll('[data-open-reviews]').forEach(button => button.addEventListener('click', () => { void openReviewDialog(button.dataset.openReviews); }));
+    document.querySelectorAll('[data-rate-game]').forEach(button => button.addEventListener('click', () => { void openReviewDialog(button.dataset.rateGame, { focusEditor:true }); }));
     filterGames();
   }
 
   function renderFeatured() {
     const featuredGame = games.find(game => game.featured) || games[0];
+    if (!featuredGame) return;
     document.getElementById('featuredArtImage').src = featuredGame.image;
     document.getElementById('featuredArtImage').alt = `${featuredGame.title} cover`;
     document.getElementById('featuredTitle').textContent = featuredGame.title;
@@ -2458,6 +2896,12 @@
     renderFeatured();
     renderCatalog();
     if (currentOpenGameId) openGameDetails(currentOpenGameId, true);
+    if (reviewDialogGameId && document.getElementById('reviewModal')?.open) {
+      document.getElementById('reviewModalTitle').textContent = communityCopy().reviewsTitle;
+      renderReviewOverview(reviewDialogGameId);
+      renderReviewEditor();
+      void loadReviewDialog(reviewDialogGameId);
+    }
 
     renderAccount();
     if (persist) localStorage.setItem(STORAGE_KEYS.language, currentLanguage);
@@ -2499,9 +2943,16 @@
   }
 
   function closeModal(modal) {
+    if (!modal) return;
     if (typeof modal.close === 'function') modal.close();
     else modal.removeAttribute('open');
-    if (!settingsModal.open && !gameModal.open && !accountModal.open) document.body.classList.remove('modal-open');
+    const anyOpen = [...document.querySelectorAll('dialog.modal')].some(item => item.open || item.hasAttribute('open'));
+    if (!anyOpen) document.body.classList.remove('modal-open');
+  }
+
+  function syncModalOpenClass() {
+    const anyOpen = [...document.querySelectorAll('dialog.modal')].some(item => item.open || item.hasAttribute('open'));
+    document.body.classList.toggle('modal-open', anyOpen);
   }
 
   function openGameDetails(id, keepOpen = false) {
@@ -2510,7 +2961,7 @@
     currentOpenGameId = id;
     const copy = getCopy();
     const art = document.getElementById('gameModalArt');
-    art.innerHTML = `<img class="cover-image" src="${game.image}" alt="Capa de ${game.title}" /><div class="modal-art-overlay"></div><div class="modal-art-label">${game.kicker}</div>`;
+    art.innerHTML = `<img class="cover-image" src="${escapeAttr(game.image || '')}" alt="Capa de ${escapeAttr(game.title)}" /><div class="modal-art-overlay"></div><div class="modal-art-label">${escapeHtml(game.kicker || 'JOGO')}</div>`;
     document.getElementById('gameModalKicker').textContent = game.kicker;
     document.getElementById('gameModalTitle').textContent = game.title;
     document.getElementById('gameModalDescription').textContent = game.description[currentLanguage];
@@ -2552,7 +3003,7 @@
     if (isEntryGateRequired()) event.preventDefault();
   });
   accountModal.addEventListener('close', () => {
-    document.body.classList.remove('modal-open');
+    queueMicrotask(syncModalOpenClass);
     if (isEntryGateRequired()) queueMicrotask(syncEntryGate);
   });
   document.querySelectorAll('[data-auth-mode]').forEach(button => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));
@@ -2593,7 +3044,7 @@
   });
   cloudGameInfoModal?.addEventListener('close', () => {
     cloudInfoGameId = null;
-    document.body.classList.remove('modal-open');
+    queueMicrotask(syncModalOpenClass);
   });
   document.getElementById('themeQuickToggle').addEventListener('click', () => {
     applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
@@ -2618,7 +3069,7 @@
     showToast(getCopy().defaultsRestored);
   });
 
-  settingsModal.addEventListener('close', () => document.body.classList.remove('modal-open'));
+  settingsModal.addEventListener('close', () => queueMicrotask(syncModalOpenClass));
   settingsModal.addEventListener('click', event => {
     if (event.target === settingsModal) closeModal(settingsModal);
   });
@@ -2643,7 +3094,7 @@
   });
   gameModal.addEventListener('close', () => {
     currentOpenGameId = null;
-    document.body.classList.remove('modal-open');
+    queueMicrotask(syncModalOpenClass);
   });
 
   document.addEventListener('keydown', event => {
@@ -2658,15 +3109,83 @@
     if (authUser && accountModal?.open) renderNicknameCooldown();
   }, 30000);
 
+
+  const reviewModal = document.getElementById('reviewModal');
+  const adminModal = document.getElementById('adminModal');
+  const adminGameModal = document.getElementById('adminGameModal');
+  const ratingPicker = document.getElementById('ratingPicker');
+  const reviewComment = document.getElementById('reviewComment');
+
+  document.getElementById('closeReviewModal')?.addEventListener('click', () => closeModal(reviewModal));
+  reviewModal?.addEventListener('click', event => { if (event.target === reviewModal) closeModal(reviewModal); });
+  reviewModal?.addEventListener('close', () => { reviewDialogGameId = null; reviewDialogOwnReview = null; reviewDraftRating = 0; queueMicrotask(syncModalOpenClass); });
+  ratingPicker?.addEventListener('pointermove', event => { if (authUser && !reviewDialogOwnReview?.is_hidden) setReviewDraftRating(ratingFromPointer(event, ratingPicker), { preview:true }); });
+  ratingPicker?.addEventListener('pointerleave', () => setReviewDraftRating(reviewDraftRating, { preview:true }));
+  ratingPicker?.addEventListener('click', event => { if (authUser && !reviewDialogOwnReview?.is_hidden) setReviewDraftRating(ratingFromPointer(event, ratingPicker)); });
+  ratingPicker?.addEventListener('keydown', event => {
+    if (!authUser || reviewDialogOwnReview?.is_hidden) return;
+    let next = reviewDraftRating || .5;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = Math.min(5, next + .5);
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = Math.max(.5, next - .5);
+    else if (event.key === 'Home') next = .5;
+    else if (event.key === 'End') next = 5;
+    else return;
+    event.preventDefault();
+    setReviewDraftRating(next);
+  });
+  reviewComment?.addEventListener('input', () => { const count=document.getElementById('reviewCharCount'); if(count) count.textContent=`${reviewComment.value.length}/800`; });
+  document.getElementById('saveReviewButton')?.addEventListener('click', () => { void saveReview(); });
+  document.getElementById('deleteOwnReview')?.addEventListener('click', () => { void deleteOwnReview(); });
+  document.getElementById('reviewLoginButton')?.addEventListener('click', () => {
+    closeModal(reviewModal);
+    if (guestMode) leaveGuestMode({ openLogin:true }); else { setAuthMode('login'); openModal(accountModal); }
+  });
+
+  document.getElementById('openAdminPanel')?.addEventListener('click', () => { void openAdminPanel(); });
+  document.getElementById('closeAdminModal')?.addEventListener('click', () => closeModal(adminModal));
+  adminModal?.addEventListener('click', event => { if (event.target === adminModal) closeModal(adminModal); });
+  adminModal?.addEventListener('close', () => queueMicrotask(syncModalOpenClass));
+  document.querySelectorAll('[data-admin-tab]').forEach(button => button.addEventListener('click', () => setAdminTab(button.dataset.adminTab)));
+  document.getElementById('adminAddGame')?.addEventListener('click', () => openAdminGameEditor());
+  document.getElementById('adminRefreshReviews')?.addEventListener('click', async () => { await loadAdminReviews(); renderAdminOverview(); });
+  document.getElementById('adminRefreshLogs')?.addEventListener('click', () => { void loadAdminLogs(); });
+  document.getElementById('adminGamesList')?.addEventListener('click', event => {
+    const edit = event.target.closest?.('[data-admin-edit-game]');
+    if (edit) return openAdminGameEditor(edit.dataset.adminEditGame);
+    const toggle = event.target.closest?.('[data-admin-toggle-game]');
+    if (toggle) void toggleAdminGamePublished(toggle.dataset.adminToggleGame);
+  });
+  document.getElementById('adminReviewsList')?.addEventListener('click', event => {
+    const clear = event.target.closest?.('[data-admin-clear-comment]');
+    if (clear) return void adminClearReviewComment(clear.dataset.adminClearComment);
+    const hide = event.target.closest?.('[data-admin-hide-review]');
+    if (hide) return void moderateReview(hide.dataset.adminHideReview, hide.dataset.hidden !== '1');
+    const del = event.target.closest?.('[data-admin-delete-review]');
+    if (del) void adminDeleteReview(del.dataset.adminDeleteReview);
+  });
+  document.getElementById('closeAdminGameModal')?.addEventListener('click', () => closeModal(adminGameModal));
+  adminGameModal?.addEventListener('click', event => { if (event.target === adminGameModal) closeModal(adminGameModal); });
+  adminGameModal?.addEventListener('close', () => queueMicrotask(syncModalOpenClass));
+  document.getElementById('adminGameForm')?.addEventListener('submit', event => { void saveAdminGame(event); });
+  document.getElementById('adminDeleteGame')?.addEventListener('click', () => { void deleteAdminGame(); });
+  document.getElementById('adminGameCoverFile')?.addEventListener('change', event => {
+    const file = event.target.files?.[0]; if (!file) return;
+    const preview = document.getElementById('adminCoverPreview');
+    const objectUrl = URL.createObjectURL(file); preview.src = objectUrl; preview.onload = () => URL.revokeObjectURL(objectUrl);
+  });
+
+
   document.getElementById('currentYear').textContent = new Date().getFullYear();
   renderStats();
   renderFeatured();
   renderCatalog();
-  loadGameDates();
+  void loadReviewStats({ rerender:true });
+  void loadGameDates();
   applyTheme(currentTheme, false);
   applyLanguage(currentLanguage, false);
   setActiveFilter('all');
   setAuthMode('login');
   renderAccount();
+  void loadCatalogFromCloud({ rerender:true });
   void initAuth();
 })();
