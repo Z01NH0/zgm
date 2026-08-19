@@ -10,7 +10,7 @@
   <link rel="icon" href="/favicon-zoinho-v2.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-32x32.png?v=2" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-  <link rel="stylesheet" href="styles.css?v=cloud-1.5.1" />
+  <link rel="stylesheet" href="styles.css?v=cloud-1.6.0" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -271,8 +271,8 @@
           <section class="account-pane profile-pane" data-account-pane="profile">
             <div class="profile-editor-head">
               <div>
-                <h3 data-i18n="profileTitle">Perfil local</h3>
-                <p data-i18n="profileHelp">Nome e foto ficam somente neste dispositivo por enquanto. Nada disso é enviado ao banco.</p>
+                <h3 data-i18n="profileTitle">Perfil da conta</h3>
+                <p data-i18n="profileHelp">Nickname e foto ficam salvos na sua conta e acompanham você em outros dispositivos.</p>
               </div>
             </div>
             <div class="profile-editor-grid">
@@ -285,8 +285,9 @@
                 </div>
               </div>
               <label class="auth-field profile-name-field">
-                <span data-i18n="profileDisplayName">Nome de exibição</span>
-                <input id="accountProfileName" type="text" autocomplete="nickname" minlength="2" maxlength="32" data-i18n-placeholder="profileNamePlaceholder" placeholder="Como você quer aparecer no portal?" />
+                <span data-i18n="profileDisplayName">Nickname</span>
+                <input id="accountProfileName" type="text" autocomplete="nickname" minlength="2" maxlength="32" aria-describedby="profileNicknameStatus" data-i18n-placeholder="profileNamePlaceholder" placeholder="Escolha seu nickname" />
+                <small class="profile-nickname-status" id="profileNicknameStatus" data-state="info">2–32 caracteres. Maiúsculas, minúsculas e espaços não criam nomes duplicados.</small>
               </label>
             </div>
             <button class="button button-primary profile-save-button" id="saveLocalProfile" type="button" data-i18n="profileSave">Salvar perfil</button>
@@ -412,7 +413,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=cloud-1.5.1"></script>
-  <script src="app.js?v=cloud-1.5.1"></script>
+  <script src="supabase-config.js?v=cloud-1.6.0"></script>
+  <script src="app.js?v=cloud-1.6.0"></script>
 </body>
 </html>
