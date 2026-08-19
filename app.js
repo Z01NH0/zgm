@@ -1,11 +1,17 @@
 (() => {
   'use strict';
 
+  const ZOINHO_CLOUD_BUILD = '1.5.0';
+  window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
+  console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`, { integratedGames: ['blood-machine', 'dead-signal', 'heroes-battle'] });
+
   const STORAGE_KEYS = {
     theme: 'zoinho-games-theme',
     language: 'zoinho-games-language',
     bridgeCache: 'zoinho-games-storage-bridge-v2',
-    bridgeCacheLegacy: 'zoinho-games-storage-bridge-v1'
+    bridgeCacheLegacy: 'zoinho-games-storage-bridge-v1',
+    localProfiles: 'zoinho-games-local-profiles-v1',
+    guestSession: 'zoinho-games-guest-session-v1'
   };
 
   const translations = {
@@ -29,6 +35,31 @@
       accountForgot: 'Esqueci minha senha',
       accountLogout: 'Sair da conta',
       accountConnected: 'CONECTADO',
+      accountGuest: 'GUEST',
+      accountGuestButton: 'Jogar como Guest (⚠️Sem saves na nuvem⚠️)',
+      accountGuestHelp: 'Entra no portal sem conta. O progresso continua local em cada jogo e não é enviado para a nuvem.',
+      authOr: 'ou',
+      accountGuestSubtitle: 'Guest • sem saves na nuvem',
+      accountGuestLocal: 'Modo Guest • dados locais neste dispositivo',
+      accountProfileTab: 'Perfil',
+      accountCloudTab: 'Nuvem',
+      profileTitle: 'Perfil local',
+      profileHelp: 'Nome e foto ficam somente neste dispositivo por enquanto. Nada disso é enviado ao banco.',
+      profileDisplayName: 'Nome de exibição',
+      profileNamePlaceholder: 'Como você quer aparecer no portal?',
+      profilePhoto: 'Foto de perfil',
+      profileChoosePhoto: 'Escolher foto',
+      profileRemovePhoto: 'Remover foto',
+      profileSave: 'Salvar perfil',
+      profileSaved: 'Perfil local atualizado.',
+      profileInvalidName: 'Escolha um nome entre 2 e 32 caracteres.',
+      profileInvalidImage: 'Escolha uma imagem PNG, JPG ou WEBP válida.',
+      profileImageTooLarge: 'A imagem é grande demais. Use um arquivo de até 8 MB.',
+      profileImageError: 'Não foi possível processar essa imagem.',
+      guestCloudTitle: 'Cloud Save indisponível no modo Guest',
+      guestCloudText: 'Os jogos continuam salvando normalmente no próprio navegador, mas nada é enviado ao Supabase. Entre ou crie uma conta para sincronizar entre dispositivos.',
+      guestGoToLogin: 'Entrar ou criar conta',
+      guestExit: 'Sair do modo Guest',
       accountNewPasswordTitle: 'Defina uma nova senha',
       accountNewPasswordHelp: 'Digite a nova senha para concluir a recuperação da conta.',
       accountNewPassword: 'Nova senha',
@@ -187,6 +218,31 @@
       accountForgot: 'Forgot my password',
       accountLogout: 'Sign out',
       accountConnected: 'CONNECTED',
+      accountGuest: 'GUEST',
+      accountGuestButton: 'Play as Guest (⚠️ No cloud saves ⚠️)',
+      accountGuestHelp: 'Enter the portal without an account. Progress remains local inside each game and is not uploaded to the cloud.',
+      authOr: 'or',
+      accountGuestSubtitle: 'Guest • no cloud saves',
+      accountGuestLocal: 'Guest mode • local data on this device',
+      accountProfileTab: 'Profile',
+      accountCloudTab: 'Cloud',
+      profileTitle: 'Local profile',
+      profileHelp: 'Name and photo stay only on this device for now. None of this is sent to the database.',
+      profileDisplayName: 'Display name',
+      profileNamePlaceholder: 'How should you appear in the portal?',
+      profilePhoto: 'Profile photo',
+      profileChoosePhoto: 'Choose photo',
+      profileRemovePhoto: 'Remove photo',
+      profileSave: 'Save profile',
+      profileSaved: 'Local profile updated.',
+      profileInvalidName: 'Choose a name between 2 and 32 characters.',
+      profileInvalidImage: 'Choose a valid PNG, JPG or WEBP image.',
+      profileImageTooLarge: 'The image is too large. Use a file up to 8 MB.',
+      profileImageError: 'This image could not be processed.',
+      guestCloudTitle: 'Cloud Save unavailable in Guest mode',
+      guestCloudText: 'Games still save normally in their own browser storage, but nothing is uploaded to Supabase. Sign in or create an account to sync across devices.',
+      guestGoToLogin: 'Sign in or create account',
+      guestExit: 'Leave Guest mode',
       accountNewPasswordTitle: 'Set a new password',
       accountNewPasswordHelp: 'Enter your new password to finish account recovery.',
       accountNewPassword: 'New password',
@@ -863,6 +919,9 @@
     : null;
 
   let authUser = null;
+  let guestMode = sessionStorage.getItem(STORAGE_KEYS.guestSession) === '1';
+  let accountTab = 'profile';
+  let pendingProfileAvatar = undefined;
   let authMode = 'login';
   let authInitialized = false;
   let authReadyResolved = false;
@@ -1004,7 +1063,8 @@
   }
 
   function bridgeLaunchUrl(game) {
-    if (!storageBridgeGames.has(game.id)) return game.url;
+    // Guest mode is deliberately local-only: no bridge handshake and no cloud snapshot.
+    if (!authUser || guestMode || !storageBridgeGames.has(game.id)) return game.url;
     const url = new URL(game.url);
     url.searchParams.set('zoinhoBridge', '1');
     url.searchParams.set('zoinhoBridgeVersion', String(STORAGE_BRIDGE_VERSION));
@@ -1454,6 +1514,10 @@
   }
 
   function requestAllActiveSnapshots() {
+    if (!authUser || guestMode) {
+      showToast(getCopy().guestCloudText);
+      return 0;
+    }
     let requested = 0;
     for (const gameId of storageBridgeGames.keys()) {
       if (requestActiveGameSnapshot(gameId, { silent: true })) requested += 1;
@@ -1495,10 +1559,23 @@
   const recoveryPasswordConfirm = document.getElementById('recoveryPasswordConfirm');
   const recoveryError = document.getElementById('recoveryError');
   const cancelRecovery = document.getElementById('cancelRecovery');
-  const signOutButton = document.getElementById('signOutButton');
   const accountEmailDisplay = document.getElementById('accountEmailDisplay');
-  const accountUserId = document.getElementById('accountUserId');
   const accountProfileAvatar = document.getElementById('accountProfileAvatar');
+  const accountDisplayName = document.getElementById('accountDisplayName');
+  const accountIdentityMeta = document.getElementById('accountIdentityMeta');
+  const closeAccountModalButton = document.getElementById('closeAccountModal');
+  const guestEntryButton = document.getElementById('guestEntryButton');
+  const accountProfileName = document.getElementById('accountProfileName');
+  const profileAvatarPreview = document.getElementById('profileAvatarPreview');
+  const profilePhotoInput = document.getElementById('profilePhotoInput');
+  const chooseProfilePhoto = document.getElementById('chooseProfilePhoto');
+  const removeProfilePhoto = document.getElementById('removeProfilePhoto');
+  const saveLocalProfileButton = document.getElementById('saveLocalProfile');
+  const guestCloudNotice = document.getElementById('guestCloudNotice');
+  const cloudSyncSection = document.getElementById('cloudSyncSection');
+  const guestGoToLoginButton = document.getElementById('guestGoToLogin');
+  const signOutButton = document.getElementById('signOutButton');
+  const exitGuestButton = document.getElementById('exitGuestButton');
   const cloudGameSearch = document.getElementById('cloudGameSearch');
   const cloudGamesList = document.getElementById('cloudGamesList');
   const cloudSyncNowButton = document.getElementById('cloudSyncNowButton');
@@ -1525,8 +1602,107 @@
     return translations[currentLanguage] || translations['pt-BR'];
   }
 
-  function accountInitial(user) {
-    return String(user?.email || 'Z').trim().charAt(0).toUpperCase() || 'Z';
+  function emptyLocalProfiles() {
+    return { version: 1, guest: {}, users: {} };
+  }
+
+  function readLocalProfiles() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.localProfiles) || 'null');
+      if (parsed && parsed.version === 1 && parsed.guest && parsed.users) return parsed;
+    } catch {}
+    return emptyLocalProfiles();
+  }
+
+  function writeLocalProfiles(store) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.localProfiles, JSON.stringify(store));
+      return true;
+    } catch (error) {
+      console.warn('[ZOINHO Profile] Não foi possível salvar o perfil local.', error);
+      return false;
+    }
+  }
+
+  function localProfileKey() {
+    return authUser?.id || 'guest';
+  }
+
+  function getLocalProfile() {
+    const store = readLocalProfiles();
+    if (authUser?.id) return store.users[authUser.id] || {};
+    return store.guest || {};
+  }
+
+  function saveLocalProfile(profile) {
+    const store = readLocalProfiles();
+    if (authUser?.id) store.users[authUser.id] = profile;
+    else store.guest = profile;
+    return writeLocalProfiles(store);
+  }
+
+  function fallbackDisplayName() {
+    if (guestMode && !authUser) return 'Guest';
+    const email = String(authUser?.email || '').trim();
+    return email.includes('@') ? email.split('@')[0] : (email || 'Jogador');
+  }
+
+  function currentDisplayName() {
+    const name = String(getLocalProfile().displayName || '').trim();
+    return name || fallbackDisplayName();
+  }
+
+  function accountInitial() {
+    return currentDisplayName().charAt(0).toUpperCase() || 'Z';
+  }
+
+  function paintAvatar(element, profile = getLocalProfile()) {
+    if (!element) return;
+    const image = typeof profile.avatarDataUrl === 'string' && profile.avatarDataUrl.startsWith('data:image/') ? profile.avatarDataUrl : '';
+    element.classList.toggle('has-photo', Boolean(image));
+    element.style.backgroundImage = image ? `url(${JSON.stringify(image)})` : '';
+    element.textContent = image ? '' : accountInitial();
+  }
+
+  function sanitizeDisplayName(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 32);
+  }
+
+  function setAccountTab(tab) {
+    accountTab = tab === 'cloud' ? 'cloud' : 'profile';
+    document.querySelectorAll('[data-account-tab]').forEach(button => {
+      const active = button.dataset.accountTab === accountTab;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('[data-account-pane]').forEach(pane => {
+      pane.hidden = pane.dataset.accountPane !== accountTab;
+    });
+  }
+
+  function hydrateProfileEditor() {
+    const profile = getLocalProfile();
+    if (accountProfileName) accountProfileName.value = profile.displayName || fallbackDisplayName();
+    pendingProfileAvatar = undefined;
+    paintAvatar(profileAvatarPreview, profile);
+  }
+
+  function isEntryGateRequired() {
+    return authInitialized && !authUser && !guestMode && !recoveryMode;
+  }
+
+  function syncEntryGate() {
+    if (!accountModal) return;
+    const gate = isEntryGateRequired();
+    accountModal.classList.toggle('is-auth-gate', gate);
+    accountModal.classList.toggle('is-guest-session', guestMode && !authUser);
+    if (closeAccountModalButton) closeAccountModalButton.hidden = gate;
+    if (gate) {
+      if (settingsModal?.open) closeModal(settingsModal);
+      if (gameModal?.open) closeModal(gameModal);
+      if (cloudGameInfoModal?.open) closeModal(cloudGameInfoModal);
+    }
+    if ((gate || recoveryMode) && !accountModal.open) openModal(accountModal);
   }
 
   function setAuthMessage(element, message = '') {
@@ -1651,26 +1827,43 @@
   function renderAccount() {
     const copy = getCopy();
     const signedIn = Boolean(authUser);
+    const inSession = signedIn || guestMode;
+    const profile = getLocalProfile();
+    const displayName = currentDisplayName();
     openAccountButton.classList.toggle('is-online', signedIn);
+    openAccountButton.classList.toggle('is-guest', guestMode && !signedIn);
 
-    if (signedIn) {
-      const email = authUser.email || 'ZOINHO Account';
-      accountButtonTitle.textContent = email;
-      accountButtonSubtitle.textContent = copy.accountCloudOn;
-      accountAvatar.textContent = accountInitial(authUser);
-      accountEmailDisplay.textContent = email;
-      accountUserId.textContent = authUser.id;
-      accountProfileAvatar.textContent = accountInitial(authUser);
+    if (inSession) {
+      accountButtonTitle.textContent = displayName;
+      accountButtonSubtitle.textContent = signedIn ? copy.accountCloudOn : copy.accountGuestSubtitle;
+      paintAvatar(accountAvatar, profile);
+      paintAvatar(accountProfileAvatar, profile);
+      if (accountDisplayName) accountDisplayName.textContent = displayName;
+      if (accountEmailDisplay) accountEmailDisplay.textContent = signedIn ? (authUser.email || 'ZOINHO Account') : copy.accountGuestLocal;
+      if (accountIdentityMeta) accountIdentityMeta.textContent = signedIn ? authUser.id : copy.accountGuestHelp;
+      const statusLabel = document.getElementById('accountConnectionLabel');
+      if (statusLabel) statusLabel.textContent = signedIn ? copy.accountConnected : copy.accountGuest;
     } else {
       accountButtonTitle.textContent = copy.accountLogin;
       accountButtonSubtitle.textContent = copy.accountCloudOff;
+      accountAvatar.classList.remove('has-photo');
+      accountAvatar.style.backgroundImage = '';
       accountAvatar.textContent = '?';
     }
 
-    authLoggedOut.hidden = signedIn || recoveryMode;
-    authLoggedIn.hidden = !signedIn || recoveryMode;
+    authLoggedOut.hidden = inSession || recoveryMode;
+    authLoggedIn.hidden = !inSession || recoveryMode;
     authRecovery.hidden = !recoveryMode;
+    if (guestCloudNotice) guestCloudNotice.hidden = !guestMode || signedIn;
+    if (cloudSyncSection) cloudSyncSection.hidden = guestMode || !signedIn;
+    if (signOutButton) signOutButton.hidden = !signedIn;
+    if (exitGuestButton) exitGuestButton.hidden = !guestMode || signedIn;
+    if (inSession) {
+      hydrateProfileEditor();
+      setAccountTab(accountTab);
+    }
     renderCloudState();
+    syncEntryGate();
   }
 
   function resetCloudSessionState() {
@@ -1702,6 +1895,10 @@
     const wasInitialized = authInitialized;
     const previousId = authUser?.id || null;
     authUser = session?.user || null;
+    if (authUser) {
+      guestMode = false;
+      sessionStorage.removeItem(STORAGE_KEYS.guestSession);
+    }
     const currentId = authUser?.id || null;
     if (previousId !== currentId) {
       clearCloudQueue();
@@ -1717,7 +1914,10 @@
     authInitialized = true;
     settleAuthReady();
     renderAccount();
-    if (authUser) void probeCloudAccess(authUser.id);
+    if (authUser) {
+      void probeCloudAccess(authUser.id);
+      if (accountModal?.open && !recoveryMode) closeModal(accountModal);
+    }
   }
 
   async function initAuth() {
@@ -1806,12 +2006,106 @@
     showToast(getCopy().authPasswordUpdated);
   }
 
+  function enterGuestMode() {
+    guestMode = true;
+    accountTab = 'profile';
+    sessionStorage.setItem(STORAGE_KEYS.guestSession, '1');
+    clearCloudQueue();
+    resetCloudSessionState();
+    renderAccount();
+    closeModal(accountModal);
+    showToast(getCopy().accountGuestHelp);
+  }
+
+  function leaveGuestMode({ openLogin = true } = {}) {
+    guestMode = false;
+    sessionStorage.removeItem(STORAGE_KEYS.guestSession);
+    accountTab = 'profile';
+    renderAccount();
+    setAuthMode('login');
+    if (openLogin) syncEntryGate();
+  }
+
+  async function imageFileToAvatar(file) {
+    const allowed = new Set(['image/png', 'image/jpeg', 'image/webp']);
+    if (!file || !allowed.has(file.type)) throw new Error('invalid-image');
+    if (file.size > 8 * 1024 * 1024) throw new Error('image-too-large');
+    const source = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('image-read-error'));
+      reader.readAsDataURL(file);
+    });
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('image-decode-error'));
+      img.src = source;
+    });
+    const size = 224;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) throw new Error('canvas-unavailable');
+    const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
+    const sw = size / scale;
+    const sh = size / scale;
+    const sx = Math.max(0, (image.naturalWidth - sw) / 2);
+    const sy = Math.max(0, (image.naturalHeight - sh) / 2);
+    ctx.fillStyle = '#111217';
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, size, size);
+    let result = canvas.toDataURL('image/webp', .82);
+    if (!result.startsWith('data:image/webp')) result = canvas.toDataURL('image/jpeg', .82);
+    if (result.length > 320000) result = canvas.toDataURL('image/jpeg', .68);
+    return result;
+  }
+
+  async function handleProfilePhotoChange() {
+    const file = profilePhotoInput?.files?.[0];
+    if (!file) return;
+    try {
+      pendingProfileAvatar = await imageFileToAvatar(file);
+      paintAvatar(profileAvatarPreview, { ...getLocalProfile(), avatarDataUrl: pendingProfileAvatar });
+    } catch (error) {
+      const code = error?.message;
+      showToast(code === 'invalid-image' ? getCopy().profileInvalidImage : code === 'image-too-large' ? getCopy().profileImageTooLarge : getCopy().profileImageError);
+    } finally {
+      if (profilePhotoInput) profilePhotoInput.value = '';
+    }
+  }
+
+  function saveProfileEditor() {
+    const name = sanitizeDisplayName(accountProfileName?.value);
+    if (name.length < 2) {
+      showToast(getCopy().profileInvalidName);
+      accountProfileName?.focus();
+      return false;
+    }
+    const previous = getLocalProfile();
+    const profile = {
+      displayName: name,
+      avatarDataUrl: pendingProfileAvatar === undefined ? (previous.avatarDataUrl || '') : (pendingProfileAvatar || '')
+    };
+    if (!saveLocalProfile(profile)) {
+      showToast(getCopy().profileImageError);
+      return false;
+    }
+    pendingProfileAvatar = undefined;
+    renderAccount();
+    showToast(getCopy().profileSaved);
+    return true;
+  }
+
   async function signOut() {
     if (!supabaseClient) return;
+    guestMode = false;
+    sessionStorage.removeItem(STORAGE_KEYS.guestSession);
     const { error } = await supabaseClient.auth.signOut();
     if (error) return showToast(error.message);
     showToast(getCopy().authSignedOut);
-    closeModal(accountModal);
+    // SIGNED_OUT will re-render and reopen the mandatory entry gate.
   }
 
   function normalize(value) {
@@ -2045,14 +2339,39 @@
   });
 
   document.getElementById('openSettings').addEventListener('click', () => openModal(settingsModal));
-  openAccountButton.addEventListener('click', () => openModal(accountModal));
-  document.getElementById('closeAccountModal').addEventListener('click', () => closeModal(accountModal));
-  accountModal.addEventListener('click', event => {
-    if (event.target === accountModal) closeModal(accountModal);
+  openAccountButton.addEventListener('click', () => {
+    if (authUser || guestMode) {
+      accountTab = 'profile';
+      renderAccount();
+    }
+    openModal(accountModal);
   });
-  accountModal.addEventListener('close', () => document.body.classList.remove('modal-open'));
+  closeAccountModalButton.addEventListener('click', () => {
+    if (!isEntryGateRequired()) closeModal(accountModal);
+  });
+  accountModal.addEventListener('click', event => {
+    if (event.target === accountModal && !isEntryGateRequired()) closeModal(accountModal);
+  });
+  accountModal.addEventListener('cancel', event => {
+    if (isEntryGateRequired()) event.preventDefault();
+  });
+  accountModal.addEventListener('close', () => {
+    document.body.classList.remove('modal-open');
+    if (isEntryGateRequired()) queueMicrotask(syncEntryGate);
+  });
   document.querySelectorAll('[data-auth-mode]').forEach(button => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));
   authForm.addEventListener('submit', submitAuthForm);
+  guestEntryButton?.addEventListener('click', enterGuestMode);
+  document.querySelectorAll('[data-account-tab]').forEach(button => button.addEventListener('click', () => setAccountTab(button.dataset.accountTab)));
+  chooseProfilePhoto?.addEventListener('click', () => profilePhotoInput?.click());
+  profilePhotoInput?.addEventListener('change', () => { void handleProfilePhotoChange(); });
+  removeProfilePhoto?.addEventListener('click', () => {
+    pendingProfileAvatar = '';
+    paintAvatar(profileAvatarPreview, { ...getLocalProfile(), avatarDataUrl: '' });
+  });
+  saveLocalProfileButton?.addEventListener('click', saveProfileEditor);
+  guestGoToLoginButton?.addEventListener('click', () => leaveGuestMode({ openLogin: true }));
+  exitGuestButton?.addEventListener('click', () => leaveGuestMode({ openLogin: true }));
   forgotPassword.addEventListener('click', sendPasswordReset);
   recoveryForm.addEventListener('submit', submitRecoveryForm);
   cancelRecovery.addEventListener('click', () => {
