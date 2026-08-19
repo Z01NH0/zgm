@@ -10,7 +10,7 @@
   <link rel="icon" href="/favicon-zoinho-v2.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-32x32.png?v=2" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-  <link rel="stylesheet" href="styles.css?v=cloud-1.6.0" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.7.0" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -257,7 +257,7 @@
             <span class="account-profile-avatar" id="accountProfileAvatar">Z</span>
             <div class="account-profile-copy">
               <span class="account-status-dot"><i></i><span id="accountConnectionLabel" data-i18n="accountConnected">CONECTADO</span></span>
-              <h3 id="accountDisplayName">Jogador</h3>
+              <h3 id="accountDisplayName">Jogador</h3><span class="account-role-badge" id="accountRoleBadge" hidden>ADMINISTRADOR</span>
               <p class="account-email" id="accountEmailDisplay">—</p>
               <p class="account-identity-meta" id="accountIdentityMeta">—</p>
             </div>
@@ -313,6 +313,7 @@
           </section>
         </section>
         <div class="modal-footer account-footer">
+          <button class="button button-admin" id="openAdminPanel" type="button" hidden>⚙ Painel Administrativo</button>
           <button class="button button-ghost" id="signOutButton" type="button" data-i18n="accountLogout">Sair da conta</button>
         </div>
       </div>
@@ -411,9 +412,91 @@
     </div>
   </dialog>
 
+
+  <dialog class="modal review-modal" id="reviewModal" aria-labelledby="reviewModalTitle">
+    <div class="modal-panel review-panel">
+      <div class="modal-header">
+        <div><span class="section-kicker">COMUNIDADE</span><h2 id="reviewModalTitle">Avaliações</h2><p class="review-game-name" id="reviewGameName">—</p></div>
+        <button class="icon-button close-modal" id="closeReviewModal" type="button" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="review-overview">
+        <div class="review-average-number" id="reviewAverageNumber">—</div>
+        <div><div class="rating-stars review-average-stars" id="reviewAverageStars"></div><p id="reviewAverageCount">Sem avaliações</p></div>
+      </div>
+      <section class="your-review-card" id="yourReviewCard">
+        <div class="your-review-head"><div><span class="section-kicker" id="yourReviewLabel">Sua avaliação</span><strong id="reviewDraftValue">0,0 / 5</strong></div></div>
+        <div class="rating-picker" id="ratingPicker" role="slider" tabindex="0" aria-valuemin="0.5" aria-valuemax="5" aria-valuenow="0.5" aria-label="Nota"><div class="rating-stars" id="ratingPickerStars"></div></div>
+        <textarea id="reviewComment" maxlength="800" rows="4" placeholder="O que você achou do jogo?"></textarea><p class="review-moderation-notice" id="reviewModerationNotice" hidden>Esta avaliação foi ocultada pela moderação.</p>
+        <div class="review-editor-footer"><span id="reviewCharCount">0/800</span><div class="review-editor-actions"><button class="button button-ghost" id="deleteOwnReview" type="button" hidden>Excluir minha avaliação</button><button class="button button-primary" id="saveReviewButton" type="button">Publicar avaliação</button></div></div>
+        <div class="review-login-notice" id="reviewLoginNotice" hidden><p id="reviewLoginText">Entre em uma conta para avaliar e comentar.</p><button class="button button-primary" id="reviewLoginButton" type="button">Entrar ou criar conta</button></div>
+      </section>
+      <section class="community-review-section"><div class="community-review-head"><h3 id="communityReviewsTitle">Avaliações da comunidade</h3></div><div class="community-review-list" id="communityReviewList"></div></section>
+    </div>
+  </dialog>
+
+  <dialog class="modal admin-modal" id="adminModal" aria-labelledby="adminModalTitle">
+    <div class="modal-panel admin-panel">
+      <div class="modal-header admin-header">
+        <div><span class="section-kicker">ZOINHO CONTROL</span><h2 id="adminModalTitle">Painel Administrativo</h2><p>Catálogo, avaliações e rastreabilidade em um lugar só.</p></div>
+        <button class="icon-button close-modal" id="closeAdminModal" type="button" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="admin-tabs" role="tablist">
+        <button class="admin-tab is-active" type="button" data-admin-tab="overview">Visão geral</button>
+        <button class="admin-tab" type="button" data-admin-tab="games">Jogos</button>
+        <button class="admin-tab" type="button" data-admin-tab="reviews">Avaliações</button>
+        <button class="admin-tab" type="button" data-admin-tab="logs">Logs</button>
+      </div>
+      <div class="admin-body">
+        <section class="admin-pane" data-admin-pane="overview">
+          <div class="admin-metric-grid"><article><span>Jogos</span><strong id="adminMetricGames">—</strong></article><article><span>Publicados</span><strong id="adminMetricPublished">—</strong></article><article><span>Avaliações</span><strong id="adminMetricReviews">—</strong></article><article><span>Ocultas</span><strong id="adminMetricHidden">—</strong></article></div>
+          <div class="admin-info-card"><h3>Permissões ativas</h3><p id="adminRoleSummary">—</p></div>
+        </section>
+        <section class="admin-pane" data-admin-pane="games" hidden>
+          <div class="admin-toolbar"><div><h3>Catálogo</h3><p>Adicionar, editar, publicar, ocultar e configurar Cloud Save sem alterar o código do portal.</p></div><button class="button button-primary" id="adminAddGame" type="button">+ Adicionar jogo</button></div>
+          <div class="admin-list" id="adminGamesList"></div>
+        </section>
+        <section class="admin-pane" data-admin-pane="reviews" hidden>
+          <div class="admin-toolbar"><div><h3>Moderação</h3><p>Ocultar ou excluir avaliações. Toda ação administrativa fica registrada.</p></div><button class="button button-ghost" id="adminRefreshReviews" type="button">Atualizar</button></div>
+          <div class="admin-list" id="adminReviewsList"></div>
+        </section>
+        <section class="admin-pane" data-admin-pane="logs" hidden>
+          <div class="admin-toolbar"><div><h3>Logs administrativos</h3><p>Histórico de alterações sensíveis no catálogo e na moderação.</p></div><button class="button button-ghost" id="adminRefreshLogs" type="button">Atualizar</button></div>
+          <div class="admin-list admin-log-list" id="adminLogsList"></div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal admin-game-modal" id="adminGameModal" aria-labelledby="adminGameModalTitle">
+    <form class="modal-panel admin-game-panel" id="adminGameForm">
+      <div class="modal-header"><div><span class="section-kicker">CATÁLOGO</span><h2 id="adminGameModalTitle">Adicionar jogo</h2></div><button class="icon-button close-modal" id="closeAdminGameModal" type="button" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <div class="admin-game-form-grid">
+        <label><span>ID / slug</span><input id="adminGameId" required pattern="[a-z0-9][a-z0-9-]{1,63}" placeholder="meu-jogo" /></label>
+        <label><span>Ordem</span><input id="adminGameOrder" type="number" min="1" max="9999" value="999" /></label>
+        <label class="span-2"><span>Nome</span><input id="adminGameTitle" required maxlength="100" /></label>
+        <label class="span-2"><span>Link do jogo</span><input id="adminGameUrl" type="url" required placeholder="https://meu-jogo.vercel.app" /></label>
+        <label><span>Kicker</span><input id="adminGameKicker" maxlength="40" placeholder="ROGUELITE" /></label>
+        <label><span>Criador</span><input id="adminGameCreator" maxlength="80" value="Z01NH0" /></label>
+        <label class="span-2"><span>Categorias internas (vírgulas)</span><input id="adminGameCategories" placeholder="action, rpg, roguelite" /></label>
+        <label><span>Tags PT (vírgulas)</span><input id="adminGameTagsPt" /></label><label><span>Tags EN (vírgulas)</span><input id="adminGameTagsEn" /></label>
+        <label><span>Modo PT</span><input id="adminGameModePt" value="Singleplayer" /></label><label><span>Modo EN</span><input id="adminGameModeEn" value="Single-player" /></label>
+        <label class="span-2"><span>Gêneros PT</span><input id="adminGameGenresPt" /></label><label class="span-2"><span>Gêneros EN</span><input id="adminGameGenresEn" /></label>
+        <label class="span-2"><span>Resumo PT</span><textarea id="adminGameShortPt" rows="2"></textarea></label><label class="span-2"><span>Resumo EN</span><textarea id="adminGameShortEn" rows="2"></textarea></label>
+        <label class="span-2"><span>Descrição PT</span><textarea id="adminGameDescriptionPt" rows="4"></textarea></label><label class="span-2"><span>Descrição EN</span><textarea id="adminGameDescriptionEn" rows="4"></textarea></label>
+        <label><span>Plataforma PT</span><input id="adminGamePlatformPt" value="PC" /></label><label><span>Plataforma EN</span><input id="adminGamePlatformEn" value="PC" /></label>
+        <label class="span-2"><span>Capa</span><div class="admin-cover-row"><img id="adminCoverPreview" alt="Prévia da capa" /><input id="adminGameCoverFile" type="file" accept="image/png,image/jpeg,image/webp" /><input id="adminGameImageUrl" placeholder="URL/caminho atual da capa" /></div></label>
+        <label class="span-2"><span>Vercel Project ID (opcional, para datas automáticas)</span><input id="adminGameVercelProjectId" placeholder="prj_..." /></label>
+        <div class="admin-check-row span-2"><label><input id="adminGamePublished" type="checkbox" checked /> Publicado</label><label><input id="adminGameFeatured" type="checkbox" /> Destaque</label><label><input id="adminGameDatesAvailable" type="checkbox" checked /> Mostrar datas</label></div>
+        <fieldset class="admin-bridge-fieldset span-2"><legend>Cloud Save</legend><p class="admin-field-note">Ativar aqui registra o jogo no portal. O próprio jogo ainda precisa ter a ZOINHO Storage Bridge instalada.</p><label><input id="adminGameBridgeEnabled" type="checkbox" /> Integrado</label><div class="admin-game-form-grid bridge-fields"><label class="span-2"><span>Origin do jogo</span><input id="adminGameBridgeOrigin" placeholder="https://meu-jogo.vercel.app" /></label><label><span>Save version</span><input id="adminGameBridgeVersion" type="number" min="1" value="1" /></label><label><span>Save keys (vírgulas)</span><input id="adminGameBridgeKeys" /></label></div></fieldset>
+      </div>
+      <p class="auth-error" id="adminGameError" hidden></p>
+      <div class="modal-footer"><button class="button button-ghost" id="adminDeleteGame" type="button" hidden>Excluir jogo</button><button class="button button-primary" type="submit">Salvar jogo</button></div>
+    </form>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=cloud-1.6.0"></script>
-  <script src="app.js?v=cloud-1.6.0"></script>
+  <script src="supabase-config.js?v=platform-1.7.0"></script>
+  <script src="app.js?v=platform-1.7.0"></script>
 </body>
 </html>
