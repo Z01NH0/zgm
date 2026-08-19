@@ -10,7 +10,10 @@
   <link rel="icon" href="/favicon-zoinho-v2.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-32x32.png?v=2" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-  <link rel="stylesheet" href="styles.css?v=platform-1.7.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.7.1" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -379,6 +382,30 @@
         </select>
       </div>
 
+      <div class="setting-group typography-setting-group">
+        <div class="setting-copy"><h3 data-i18n="typography">Tipografia</h3><p data-i18n="typographyText">Ajuste o tamanho e o estilo das fontes do portal.</p></div>
+        <div class="typography-block">
+          <div class="typography-label" data-i18n="fontSize">Tamanho da fonte</div>
+          <div class="font-size-options" role="radiogroup" aria-label="Tamanho da fonte">
+            <label class="font-size-option"><input type="radio" name="fontSize" value="compact" /><span><strong data-i18n="fontSizeCompact">Compacta</strong><small>14px</small></span></label>
+            <label class="font-size-option"><input type="radio" name="fontSize" value="normal" /><span><strong data-i18n="fontSizeNormal">Padrão</strong><small>16px</small></span></label>
+            <label class="font-size-option"><input type="radio" name="fontSize" value="comfortable" /><span><strong data-i18n="fontSizeComfortable">Confortável</strong><small>18px</small></span></label>
+            <label class="font-size-option"><input type="radio" name="fontSize" value="large" /><span><strong data-i18n="fontSizeLarge">Grande</strong><small>20px</small></span></label>
+          </div>
+        </div>
+        <div class="typography-block">
+          <div class="typography-label" data-i18n="fontStyle">Estilo da fonte</div>
+          <div class="font-family-options" role="radiogroup" aria-label="Estilo da fonte">
+            <label class="font-family-option font-preview-inter"><input type="radio" name="fontFamily" value="inter" /><span><strong>Inter</strong><small data-i18n="fontModern">Moderna e neutra</small><em>Aa</em></span></label>
+            <label class="font-family-option font-preview-open-sans"><input type="radio" name="fontFamily" value="open-sans" /><span><strong>Open Sans</strong><small data-i18n="fontReadable">Leitura confortável</small><em>Aa</em></span></label>
+            <label class="font-family-option font-preview-montserrat"><input type="radio" name="fontFamily" value="montserrat" /><span><strong>Montserrat</strong><small data-i18n="fontGeometric">Geométrica e forte</small><em>Aa</em></span></label>
+            <label class="font-family-option font-preview-georgia"><input type="radio" name="fontFamily" value="georgia" /><span><strong>Georgia</strong><small data-i18n="fontClassic">Clássica e elegante</small><em>Aa</em></span></label>
+            <label class="font-family-option font-preview-courier"><input type="radio" name="fontFamily" value="courier" /><span><strong>Courier New</strong><small data-i18n="fontRetro">Retrô e monoespaçada</small><em>Aa</em></span></label>
+            <label class="font-family-option font-preview-papyrus"><input type="radio" name="fontFamily" value="papyrus" /><span><strong>Papyrus</strong><small data-i18n="fontFantasy">Fantasia caótica</small><em>Aa</em></span></label>
+          </div>
+        </div>
+      </div>
+
       <div class="modal-footer">
         <button class="button button-ghost" id="resetSettings" type="button" data-i18n="reset">Restaurar padrão</button>
         <button class="button button-primary" value="default" type="submit" data-i18n="done">Concluído</button>
@@ -423,11 +450,12 @@
         <div class="review-average-number" id="reviewAverageNumber">—</div>
         <div><div class="rating-stars review-average-stars" id="reviewAverageStars"></div><p id="reviewAverageCount">Sem avaliações</p></div>
       </div>
+      <section class="own-review-spotlight" id="ownReviewSpotlight" hidden></section>
       <section class="your-review-card" id="yourReviewCard">
         <div class="your-review-head"><div><span class="section-kicker" id="yourReviewLabel">Sua avaliação</span><strong id="reviewDraftValue">0,0 / 5</strong></div></div>
         <div class="rating-picker" id="ratingPicker" role="slider" tabindex="0" aria-valuemin="0.5" aria-valuemax="5" aria-valuenow="0.5" aria-label="Nota"><div class="rating-stars" id="ratingPickerStars"></div></div>
         <textarea id="reviewComment" maxlength="800" rows="4" placeholder="O que você achou do jogo?"></textarea><p class="review-moderation-notice" id="reviewModerationNotice" hidden>Esta avaliação foi ocultada pela moderação.</p>
-        <div class="review-editor-footer"><span id="reviewCharCount">0/800</span><div class="review-editor-actions"><button class="button button-ghost" id="deleteOwnReview" type="button" hidden>Excluir minha avaliação</button><button class="button button-primary" id="saveReviewButton" type="button">Publicar avaliação</button></div></div>
+        <div class="review-editor-footer"><span id="reviewCharCount">0/800</span><div class="review-editor-actions"><button class="button button-ghost" id="cancelReviewEdit" type="button" hidden>Cancelar edição</button><button class="button button-primary" id="saveReviewButton" type="button">Publicar avaliação</button></div></div>
         <div class="review-login-notice" id="reviewLoginNotice" hidden><p id="reviewLoginText">Entre em uma conta para avaliar e comentar.</p><button class="button button-primary" id="reviewLoginButton" type="button">Entrar ou criar conta</button></div>
       </section>
       <section class="community-review-section"><div class="community-review-head"><h3 id="communityReviewsTitle">Avaliações da comunidade</h3></div><div class="community-review-list" id="communityReviewList"></div></section>
@@ -496,7 +524,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=platform-1.7.0"></script>
-  <script src="app.js?v=platform-1.7.0"></script>
+  <script src="supabase-config.js?v=platform-1.7.1"></script>
+  <script src="app.js?v=platform-1.7.1"></script>
 </body>
 </html>
