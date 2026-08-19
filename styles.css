@@ -842,3 +842,59 @@ html[data-theme="light"] .icon-moon { display: none; }
   .account-button { min-width: 42px; width: 42px; padding: 0; justify-content: center; }
   .account-button-copy { display: none; }
 }
+
+
+/* --- ZOINHO Account v1.5: entry gate, Guest mode and local profile --- */
+.account-button.is-guest .account-avatar {
+  color: #e7bf69; border-color: color-mix(in srgb, #e7bf69 48%, transparent); background: color-mix(in srgb, #e7bf69 12%, transparent);
+}
+.account-avatar.has-photo, .account-profile-avatar.has-photo, .profile-avatar-preview.has-photo {
+  background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;
+  color: transparent !important;
+}
+.account-modal.is-auth-gate::backdrop { background: rgba(4, 5, 8, .88); backdrop-filter: blur(12px); }
+.account-modal.is-auth-gate .account-modal-panel { width: min(100%, 640px); box-shadow: 0 30px 90px rgba(0,0,0,.5); }
+.account-modal.is-auth-gate .modal-header { border-bottom-color: color-mix(in srgb, var(--accent) 28%, var(--line)); }
+.auth-or { display: flex; align-items: center; gap: 12px; color: var(--text-faint); font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .12em; }
+.auth-or::before, .auth-or::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.guest-entry-button {
+  width: 100%; min-height: 48px; justify-content: center; border: 1px solid color-mix(in srgb, #d7a94e 42%, var(--line));
+  background: color-mix(in srgb, #d7a94e 10%, var(--surface)); color: var(--text); font-weight: 850;
+}
+.guest-entry-button:hover { border-color: #d7a94e; background: color-mix(in srgb, #d7a94e 16%, var(--surface)); transform: translateY(-1px); }
+.guest-entry-help { margin: -7px 4px 0; color: var(--text-faint); font-size: 9px; line-height: 1.5; text-align: center; }
+.account-profile-copy { min-width: 0; flex: 1; }
+.account-profile-row .account-email { margin-top: 3px; color: var(--text-soft); font-size: 10px; font-family: inherit; }
+.account-profile-row .account-identity-meta { max-width: 430px; margin-top: 4px; color: var(--text-faint); font-size: 8px; line-height: 1.45; overflow-wrap: anywhere; }
+.account-button.is-guest + * { }
+.account-section-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 22px; padding: 5px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.account-section-tab { min-height: 39px; border: 0; border-radius: 8px; color: var(--text-soft); background: transparent; cursor: pointer; font: inherit; font-size: 10px; font-weight: 850; transition: .16s ease; }
+.account-section-tab:hover { color: var(--text); }
+.account-section-tab.is-active { color: var(--text); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+.account-pane { padding-top: 18px; }
+.profile-editor-head h3 { margin: 0; font-size: 16px; }
+.profile-editor-head p { margin: 5px 0 0; color: var(--text-faint); font-size: 9px; line-height: 1.55; }
+.profile-editor-grid { display: grid; grid-template-columns: 190px 1fr; gap: 20px; align-items: center; margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.profile-photo-editor { display: flex; align-items: center; gap: 12px; }
+.profile-avatar-preview { width: 64px; height: 64px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--accent-soft); color: var(--accent); font-size: 20px; font-weight: 900; }
+.profile-photo-actions { display: grid; gap: 5px; }
+.profile-photo-actions .button { min-height: 31px; padding: 0 10px; font-size: 8px; }
+.profile-remove-photo { border: 0; padding: 3px 2px; color: var(--text-faint); background: transparent; cursor: pointer; text-align: left; font-size: 8px; font-weight: 750; }
+.profile-remove-photo:hover { color: var(--accent); }
+.profile-name-field input { background: var(--surface-2); }
+.profile-save-button { width: 100%; margin-top: 12px; justify-content: center; }
+.cloud-pane .cloud-sync-section { margin-top: 0; padding-top: 0; border-top: 0; }
+.guest-cloud-notice { display: grid; grid-template-columns: 54px 1fr; gap: 13px; align-items: center; padding: 15px; border: 1px solid color-mix(in srgb, #d7a94e 35%, var(--line)); border-radius: 14px; background: color-mix(in srgb, #d7a94e 8%, var(--surface)); }
+.guest-cloud-notice .guest-cloud-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; color: #e7bf69; background: color-mix(in srgb, #d7a94e 12%, transparent); font-weight: 900; }
+.guest-cloud-notice h3 { margin: 0; font-size: 13px; }
+.guest-cloud-notice p { margin: 5px 0 0; color: var(--text-soft); font-size: 9px; line-height: 1.55; }
+.guest-cloud-notice .button { grid-column: 1 / -1; justify-content: center; }
+.account-footer { display: flex; justify-content: flex-end; }
+.account-button .account-avatar, .account-profile-avatar { overflow: hidden; }
+@media (max-width: 620px) {
+  .profile-editor-grid { grid-template-columns: 1fr; }
+  .profile-photo-editor { justify-content: flex-start; }
+}
+
+.account-modal.is-guest-session .account-status-dot { color: #e7bf69; }
+.account-modal.is-guest-session .account-status-dot i { background: #e7bf69; box-shadow: 0 0 0 4px color-mix(in srgb, #e7bf69 12%, transparent); }
