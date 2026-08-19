@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=platform-1.7.1" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.8.0" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -260,7 +260,7 @@
             <span class="account-profile-avatar" id="accountProfileAvatar">Z</span>
             <div class="account-profile-copy">
               <span class="account-status-dot"><i></i><span id="accountConnectionLabel" data-i18n="accountConnected">CONECTADO</span></span>
-              <h3 id="accountDisplayName">Jogador</h3><span class="account-role-badge" id="accountRoleBadge" hidden>ADMINISTRADOR</span>
+              <div class="account-name-line"><h3 id="accountDisplayName">Jogador</h3><span class="account-equipped-titles" id="accountEquippedTitles"></span></div><span class="account-role-badge" id="accountRoleBadge" hidden>ADMINISTRADOR</span>
               <p class="account-email" id="accountEmailDisplay">—</p>
               <p class="account-identity-meta" id="accountIdentityMeta">—</p>
             </div>
@@ -293,6 +293,18 @@
                 <small class="profile-nickname-status" id="profileNicknameStatus" data-state="info">2–32 caracteres. Maiúsculas, minúsculas e espaços não criam nomes duplicados.</small>
               </label>
             </div>
+            <section class="profile-titles-editor" id="profileTitlesEditor" aria-labelledby="profileTitlesTitle">
+              <div class="profile-titles-head">
+                <div>
+                  <span class="section-kicker" data-i18n="profileTitlesKicker">TÍTULOS</span>
+                  <h4 id="profileTitlesTitle" data-i18n="profileTitlesTitle">Títulos equipados</h4>
+                  <p data-i18n="profileTitlesHelp">Escolha até 3 títulos desbloqueados para aparecer ao lado do seu nickname.</p>
+                </div>
+                <span class="profile-title-limit" id="profileTitleLimit">0 / 3</span>
+              </div>
+              <div class="profile-title-list" id="profileTitleList" aria-live="polite"></div>
+              <button class="button button-ghost profile-title-save" id="saveProfileTitles" type="button" data-i18n="profileTitlesSave">Salvar títulos</button>
+            </section>
             <button class="button button-primary profile-save-button" id="saveLocalProfile" type="button" data-i18n="profileSave">Salvar perfil</button>
           </section>
 
@@ -462,6 +474,37 @@
     </div>
   </dialog>
 
+  <dialog class="modal public-profile-modal" id="publicProfileModal" aria-labelledby="publicProfileName">
+    <div class="modal-panel public-profile-panel">
+      <div class="modal-header public-profile-header">
+        <div><span class="section-kicker" data-i18n="publicProfileKicker">PERFIL PÚBLICO</span><h2 id="publicProfileName">Jogador</h2></div>
+        <button class="icon-button close-modal" id="closePublicProfileModal" type="button" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="public-profile-body" id="publicProfileBody">
+        <section class="public-profile-identity">
+          <div class="public-profile-avatar" id="publicProfileAvatar">J</div>
+          <div class="public-profile-identity-copy">
+            <h3 id="publicProfileDisplayName">Jogador</h3>
+            <div class="public-profile-titles" id="publicProfileTitles"></div>
+            <div class="public-profile-stats"><span><strong id="publicProfileGamesCount">0</strong><small data-i18n="publicProfileGames">jogos jogados</small></span><span><strong id="publicProfileReviewsCount">0</strong><small data-i18n="publicProfileReviews">avaliações</small></span></div>
+          </div>
+        </section>
+        <div class="public-profile-loading" id="publicProfileLoading" data-i18n="publicProfileLoading">Carregando perfil...</div>
+        <div class="public-profile-content" id="publicProfileContent" hidden>
+          <section class="public-profile-section">
+            <div class="public-profile-section-head"><h3 data-i18n="publicProfilePlayedTitle">Jogos jogados</h3><p data-i18n="publicProfilePlayedHelp">Jogos abertos por esta conta pelo portal. Nenhum save é exibido.</p></div>
+            <div class="public-game-list" id="publicProfileGamesList"></div>
+          </section>
+          <section class="public-profile-section">
+            <div class="public-profile-section-head"><h3 data-i18n="publicProfileReviewsTitle">Avaliações públicas</h3><p data-i18n="publicProfileReviewsHelp">Somente avaliações visíveis para a comunidade.</p></div>
+            <div class="public-profile-review-list" id="publicProfileReviewsList"></div>
+          </section>
+        </div>
+        <div class="public-profile-error" id="publicProfileError" hidden data-i18n="publicProfileError">Não foi possível carregar este perfil.</div>
+      </div>
+    </div>
+  </dialog>
+
   <dialog class="modal admin-modal" id="adminModal" aria-labelledby="adminModalTitle">
     <div class="modal-panel admin-panel">
       <div class="modal-header admin-header">
@@ -524,7 +567,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=platform-1.7.1"></script>
-  <script src="app.js?v=platform-1.7.1"></script>
+  <script src="supabase-config.js?v=platform-1.8.0"></script>
+  <script src="app.js?v=platform-1.8.0"></script>
 </body>
 </html>
