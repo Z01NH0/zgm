@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.5.1';
+  const ZOINHO_CLOUD_BUILD = '1.6.0';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`, { integratedGames: ['blood-machine', 'dead-signal', 'heroes-battle'] });
 
@@ -43,16 +43,24 @@
       accountGuestLocal: 'Modo Guest • dados locais neste dispositivo',
       accountProfileTab: 'Perfil',
       accountCloudTab: 'Nuvem',
-      profileTitle: 'Perfil local',
-      profileHelp: 'Nome e foto ficam somente neste dispositivo por enquanto. Nada disso é enviado ao banco.',
-      profileDisplayName: 'Nome de exibição',
-      profileNamePlaceholder: 'Como você quer aparecer no portal?',
+      profileTitle: 'Perfil da conta',
+      profileHelp: 'Nickname e foto ficam salvos na sua conta e acompanham você em outros dispositivos.',
+      profileDisplayName: 'Nickname',
+      profileNamePlaceholder: 'Escolha seu nickname',
+      profileNicknameRule: '2–32 caracteres. Maiúsculas, minúsculas e espaços não criam nomes duplicados.',
+      profileNicknameReady: 'Você pode alterar seu nickname agora.',
+      profileNicknameCooldown: 'Próxima alteração de nickname em {time}.',
+      profileNicknameTaken: 'Esse nickname já está sendo usado por outra conta.',
+      profileNicknameCooldownError: 'Seu nickname só pode ser alterado a cada 2 horas.',
+      profileLoading: 'Carregando perfil da conta...',
+      profileLoadError: 'Não foi possível carregar seu perfil da nuvem.',
+      profileSaveError: 'Não foi possível salvar seu perfil agora.',
       profilePhoto: 'Foto de perfil',
       profileChoosePhoto: 'Escolher foto',
       profileRemovePhoto: 'Remover foto',
       profileSave: 'Salvar perfil',
-      profileSaved: 'Perfil local atualizado.',
-      profileInvalidName: 'Escolha um nome entre 2 e 32 caracteres.',
+      profileSaved: 'Perfil sincronizado com a sua conta.',
+      profileInvalidName: 'Escolha um nickname entre 2 e 32 caracteres.',
       profileInvalidImage: 'Escolha uma imagem PNG, JPG ou WEBP válida.',
       profileImageTooLarge: 'A imagem é grande demais. Use um arquivo de até 8 MB.',
       profileImageError: 'Não foi possível processar essa imagem.',
@@ -226,16 +234,24 @@
       accountGuestLocal: 'Guest mode • local data on this device',
       accountProfileTab: 'Profile',
       accountCloudTab: 'Cloud',
-      profileTitle: 'Local profile',
-      profileHelp: 'Name and photo stay only on this device for now. None of this is sent to the database.',
-      profileDisplayName: 'Display name',
-      profileNamePlaceholder: 'How should you appear in the portal?',
+      profileTitle: 'Account profile',
+      profileHelp: 'Your nickname and photo are saved to your account and follow you across devices.',
+      profileDisplayName: 'Nickname',
+      profileNamePlaceholder: 'Choose your nickname',
+      profileNicknameRule: '2–32 characters. Case and extra spaces do not create duplicate names.',
+      profileNicknameReady: 'You can change your nickname now.',
+      profileNicknameCooldown: 'Next nickname change in {time}.',
+      profileNicknameTaken: 'That nickname is already used by another account.',
+      profileNicknameCooldownError: 'Your nickname can only be changed once every 2 hours.',
+      profileLoading: 'Loading account profile...',
+      profileLoadError: 'Your cloud profile could not be loaded.',
+      profileSaveError: 'Your profile could not be saved right now.',
       profilePhoto: 'Profile photo',
       profileChoosePhoto: 'Choose photo',
       profileRemovePhoto: 'Remove photo',
       profileSave: 'Save profile',
-      profileSaved: 'Local profile updated.',
-      profileInvalidName: 'Choose a name between 2 and 32 characters.',
+      profileSaved: 'Profile synced to your account.',
+      profileInvalidName: 'Choose a nickname between 2 and 32 characters.',
       profileInvalidImage: 'Choose a valid PNG, JPG or WEBP image.',
       profileImageTooLarge: 'The image is too large. Use a file up to 8 MB.',
       profileImageError: 'This image could not be processed.',
@@ -922,6 +938,12 @@
   let guestMode = sessionStorage.getItem(STORAGE_KEYS.guestSession) === '1';
   let accountTab = 'profile';
   let pendingProfileAvatar = undefined;
+  let cloudProfile = null;
+  let cloudProfileUserId = null;
+  let profileLoadError = null;
+  let profileLoading = false;
+  let profileSaving = false;
+  const NICKNAME_COOLDOWN_MS = 2 * 60 * 60 * 1000;
   let authMode = 'login';
   let authInitialized = false;
   let authReadyResolved = false;
@@ -1566,6 +1588,7 @@
   const closeAccountModalButton = document.getElementById('closeAccountModal');
   const guestEntryButton = document.getElementById('guestEntryButton');
   const accountProfileName = document.getElementById('accountProfileName');
+  const profileNicknameStatus = document.getElementById('profileNicknameStatus');
   const profileAvatarPreview = document.getElementById('profileAvatarPreview');
   const profilePhotoInput = document.getElementById('profilePhotoInput');
   const chooseProfilePhoto = document.getElementById('chooseProfilePhoto');
@@ -1640,6 +1663,24 @@
     return writeLocalProfiles(store);
   }
 
+  function mapCloudProfile(row) {
+    if (!row) return { exists: false };
+    return {
+      exists: true,
+      nickname: String(row.nickname || '').trim(),
+      displayName: String(row.nickname || '').trim(),
+      avatarDataUrl: typeof row.avatar_data_url === 'string' ? row.avatar_data_url : '',
+      nicknameChangedAt: row.nickname_changed_at || null,
+      updatedAt: row.updated_at || null
+    };
+  }
+
+  function getAccountProfile() {
+    if (!authUser?.id) return {};
+    if (cloudProfileUserId === authUser.id && cloudProfile) return cloudProfile;
+    return getLocalProfile();
+  }
+
   function fallbackDisplayName() {
     if (guestMode && !authUser) return 'Guest';
     const email = String(authUser?.email || '').trim();
@@ -1648,7 +1689,8 @@
 
   function currentDisplayName() {
     if (guestMode && !authUser) return 'Guest';
-    const name = String(getLocalProfile().displayName || '').trim();
+    const profile = getAccountProfile();
+    const name = String(profile.nickname || profile.displayName || '').trim();
     return name || fallbackDisplayName();
   }
 
@@ -1656,7 +1698,7 @@
     return currentDisplayName().charAt(0).toUpperCase() || 'Z';
   }
 
-  function paintAvatar(element, profile = getLocalProfile()) {
+  function paintAvatar(element, profile = getAccountProfile()) {
     if (!element) return;
     const image = typeof profile.avatarDataUrl === 'string' && profile.avatarDataUrl.startsWith('data:image/') ? profile.avatarDataUrl : '';
     element.classList.toggle('has-photo', Boolean(image));
@@ -1666,6 +1708,99 @@
 
   function sanitizeDisplayName(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 32);
+  }
+
+  function nicknameKey(value) {
+    return sanitizeDisplayName(value).toLocaleLowerCase('pt-BR');
+  }
+
+  function nicknameCooldownRemaining(profile = getAccountProfile()) {
+    if (!profile?.exists || !profile?.nickname || !profile?.nicknameChangedAt) return 0;
+    const changedAt = Date.parse(profile.nicknameChangedAt);
+    if (!Number.isFinite(changedAt)) return 0;
+    return Math.max(0, changedAt + NICKNAME_COOLDOWN_MS - Date.now());
+  }
+
+  function formatCooldown(ms) {
+    const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (currentLanguage === 'en') return hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+    return hours ? `${hours}h ${minutes}min` : `${minutes}min`;
+  }
+
+  function renderNicknameCooldown() {
+    if (!accountProfileName || !profileNicknameStatus) return;
+    const copy = getCopy();
+    const profile = getAccountProfile();
+    const hasNickname = Boolean(profile?.exists && profile?.nickname);
+    const remaining = nicknameCooldownRemaining(profile);
+    const locked = hasNickname && remaining > 0;
+    const unavailable = profileLoading || Boolean(profileLoadError);
+    accountProfileName.disabled = !authUser || locked || profileSaving || unavailable;
+    if (chooseProfilePhoto) chooseProfilePhoto.disabled = !authUser || profileSaving || unavailable;
+    if (removeProfilePhoto) removeProfilePhoto.disabled = !authUser || profileSaving || unavailable;
+    if (saveLocalProfileButton) saveLocalProfileButton.disabled = !authUser || profileSaving || unavailable;
+    profileNicknameStatus.hidden = !authUser;
+    if (profileLoading) {
+      profileNicknameStatus.dataset.state = 'info';
+      profileNicknameStatus.textContent = copy.profileLoading;
+    } else if (profileLoadError) {
+      profileNicknameStatus.dataset.state = 'error';
+      profileNicknameStatus.textContent = copy.profileLoadError;
+    } else {
+      profileNicknameStatus.dataset.state = locked ? 'locked' : (hasNickname ? 'ready' : 'info');
+      profileNicknameStatus.textContent = locked
+        ? copy.profileNicknameCooldown.replace('{time}', formatCooldown(remaining))
+        : (hasNickname ? copy.profileNicknameReady : copy.profileNicknameRule);
+    }
+  }
+
+  async function loadCloudProfile(expectedUserId = authUser?.id || null) {
+    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId) return null;
+    profileLoading = true;
+    profileLoadError = null;
+    renderNicknameCooldown();
+    const { data, error } = await supabaseClient
+      .from('user_profiles')
+      .select('user_id, nickname, avatar_data_url, nickname_changed_at, updated_at')
+      .eq('user_id', expectedUserId)
+      .limit(1);
+    if (authUser?.id !== expectedUserId) { profileLoading = false; return null; }
+    if (error) {
+      profileLoading = false;
+      profileLoadError = error;
+      console.warn('[ZOINHO Profile] Não foi possível carregar o perfil da conta.', error);
+      renderNicknameCooldown();
+      return null;
+    }
+    const row = Array.isArray(data) ? data[0] : null;
+    profileLoading = false;
+    cloudProfileUserId = expectedUserId;
+    if (row) {
+      cloudProfile = mapCloudProfile(row);
+      saveLocalProfile({
+        displayName: cloudProfile.nickname,
+        nickname: cloudProfile.nickname,
+        avatarDataUrl: cloudProfile.avatarDataUrl,
+        nicknameChangedAt: cloudProfile.nicknameChangedAt
+      });
+    } else {
+      // Migração suave da v1.5.x: mostra o perfil local antigo como rascunho,
+      // mas ele só passa a reservar o nickname depois de um Save bem-sucedido no banco.
+      const cached = getLocalProfile();
+      const cachedName = sanitizeDisplayName(cached.nickname || cached.displayName || '');
+      cloudProfile = {
+        exists: false,
+        nickname: cachedName,
+        displayName: cachedName,
+        avatarDataUrl: cached.avatarDataUrl || '',
+        nicknameChangedAt: null,
+        updatedAt: null
+      };
+    }
+    renderAccount();
+    return cloudProfile;
   }
 
   function setAccountTab(tab) {
@@ -1685,10 +1820,11 @@
   }
 
   function hydrateProfileEditor() {
-    const profile = getLocalProfile();
-    if (accountProfileName) accountProfileName.value = profile.displayName || fallbackDisplayName();
+    const profile = getAccountProfile();
+    if (accountProfileName) accountProfileName.value = profile.nickname || profile.displayName || fallbackDisplayName();
     pendingProfileAvatar = undefined;
     paintAvatar(profileAvatarPreview, profile);
+    renderNicknameCooldown();
   }
 
   function isEntryGateRequired() {
@@ -1835,7 +1971,7 @@
     const guestSession = guestMode && !signedIn;
     const inSession = signedIn || guestSession;
     // Guest não possui perfil personalizável. Qualquer perfil guest legado é deliberadamente ignorado.
-    const profile = signedIn ? getLocalProfile() : {};
+    const profile = signedIn ? getAccountProfile() : {};
     const displayName = guestSession ? 'Guest' : currentDisplayName();
     openAccountButton.classList.toggle('is-online', signedIn);
     openAccountButton.classList.toggle('is-guest', guestSession);
@@ -1909,6 +2045,10 @@
     }
     const currentId = authUser?.id || null;
     if (previousId !== currentId) {
+      cloudProfile = null;
+      cloudProfileUserId = null;
+      profileLoadError = null;
+      profileLoading = false;
       clearCloudQueue();
       resetCloudSessionState();
       if (wasInitialized) {
@@ -1923,6 +2063,7 @@
     settleAuthReady();
     renderAccount();
     if (authUser) {
+      void loadCloudProfile(authUser.id);
       void probeCloudAccess(authUser.id);
       if (accountModal?.open && !recoveryMode) closeModal(accountModal);
     }
@@ -2075,7 +2216,7 @@
     if (!file) return;
     try {
       pendingProfileAvatar = await imageFileToAvatar(file);
-      paintAvatar(profileAvatarPreview, { ...getLocalProfile(), avatarDataUrl: pendingProfileAvatar });
+      paintAvatar(profileAvatarPreview, { ...getAccountProfile(), avatarDataUrl: pendingProfileAvatar });
     } catch (error) {
       const code = error?.message;
       showToast(code === 'invalid-image' ? getCopy().profileInvalidImage : code === 'image-too-large' ? getCopy().profileImageTooLarge : getCopy().profileImageError);
@@ -2084,26 +2225,73 @@
     }
   }
 
-  function saveProfileEditor() {
+  async function saveProfileEditor() {
+    if (!authUser || !supabaseClient || profileSaving || profileLoading || profileLoadError) return false;
+    const copy = getCopy();
     const name = sanitizeDisplayName(accountProfileName?.value);
     if (name.length < 2) {
-      showToast(getCopy().profileInvalidName);
+      showToast(copy.profileInvalidName);
       accountProfileName?.focus();
       return false;
     }
-    const previous = getLocalProfile();
-    const profile = {
-      displayName: name,
-      avatarDataUrl: pendingProfileAvatar === undefined ? (previous.avatarDataUrl || '') : (pendingProfileAvatar || '')
-    };
-    if (!saveLocalProfile(profile)) {
-      showToast(getCopy().profileImageError);
+
+    const previous = getAccountProfile();
+    const nicknameChanged = Boolean(previous.exists && previous.nickname) && nicknameKey(name) !== nicknameKey(previous.nickname);
+    if (nicknameChanged && nicknameCooldownRemaining(previous) > 0) {
+      showToast(copy.profileNicknameCooldownError);
+      renderNicknameCooldown();
       return false;
     }
-    pendingProfileAvatar = undefined;
-    renderAccount();
-    showToast(getCopy().profileSaved);
-    return true;
+
+    const avatarDataUrl = pendingProfileAvatar === undefined ? (previous.avatarDataUrl || '') : (pendingProfileAvatar || '');
+    profileSaving = true;
+    if (saveLocalProfileButton) saveLocalProfileButton.disabled = true;
+    renderNicknameCooldown();
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_profiles')
+        .upsert({
+          user_id: authUser.id,
+          nickname: name,
+          avatar_data_url: avatarDataUrl
+        }, { onConflict: 'user_id' })
+        .select('user_id, nickname, avatar_data_url, nickname_changed_at, updated_at')
+        .limit(1);
+
+      if (error) {
+        const message = String(error.message || '').toLowerCase();
+        if (error.code === '23505' || message.includes('nickname_key') || message.includes('duplicate')) {
+          showToast(copy.profileNicknameTaken);
+          return false;
+        }
+        if (message.includes('nickname_cooldown')) {
+          showToast(copy.profileNicknameCooldownError);
+          await loadCloudProfile(authUser.id);
+          return false;
+        }
+        console.warn('[ZOINHO Profile] Falha ao salvar perfil.', error);
+        showToast(copy.profileSaveError);
+        return false;
+      }
+
+      const row = Array.isArray(data) ? data[0] : null;
+      cloudProfileUserId = authUser.id;
+      cloudProfile = mapCloudProfile(row || { nickname: name, avatar_data_url: avatarDataUrl, nickname_changed_at: previous.nicknameChangedAt });
+      saveLocalProfile({
+        displayName: cloudProfile.nickname,
+        nickname: cloudProfile.nickname,
+        avatarDataUrl: cloudProfile.avatarDataUrl,
+        nicknameChangedAt: cloudProfile.nicknameChangedAt
+      });
+      pendingProfileAvatar = undefined;
+      renderAccount();
+      showToast(copy.profileSaved);
+      return true;
+    } finally {
+      profileSaving = false;
+      renderNicknameCooldown();
+    }
   }
 
   async function signOut() {
@@ -2375,7 +2563,7 @@
   profilePhotoInput?.addEventListener('change', () => { void handleProfilePhotoChange(); });
   removeProfilePhoto?.addEventListener('click', () => {
     pendingProfileAvatar = '';
-    paintAvatar(profileAvatarPreview, { ...getLocalProfile(), avatarDataUrl: '' });
+    paintAvatar(profileAvatarPreview, { ...getAccountProfile(), avatarDataUrl: '' });
   });
   saveLocalProfileButton?.addEventListener('click', saveProfileEditor);
   guestGoToLoginButton?.addEventListener('click', () => leaveGuestMode({ openLogin: true }));
@@ -2465,6 +2653,10 @@
       document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
+
+  setInterval(() => {
+    if (authUser && accountModal?.open) renderNicknameCooldown();
+  }, 30000);
 
   document.getElementById('currentYear').textContent = new Date().getFullYear();
   renderStats();
