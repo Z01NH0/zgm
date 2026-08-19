@@ -1,4 +1,4 @@
--- ZOINHO GAMES - Cloud Save v1.2
+-- ZOINHO GAMES - Cloud Save v1.3
 -- Execute este arquivo inteiro no SQL Editor do MESMO projeto Supabase.
 -- Pode ser reexecutado: ele ajusta tabela, grants, RLS, policies e trigger sem criar uma segunda tabela.
 
