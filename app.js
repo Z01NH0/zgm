@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.8.0';
+  const ZOINHO_CLOUD_BUILD = '1.8.1';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -33,7 +33,7 @@
       accountPassword: 'Senha',
       accountPasswordConfirm: 'Confirmar senha',
       accountLoginHelp: 'Entre para sincronizar seus saves entre computadores.',
-      accountSignupHelp: 'Crie sua conta ZOINHO. O Supabase pode pedir confirmação por e-mail antes do primeiro login.',
+      accountSignupHelp: 'Crie sua conta ZOINHO. Talvez seja necessário confirmar o e-mail antes do primeiro login.',
       accountForgot: 'Esqueci minha senha',
       accountLogout: 'Sair da conta',
       accountConnected: 'CONECTADO',
@@ -88,7 +88,7 @@
       profileImageTooLarge: 'A imagem é grande demais. Use um arquivo de até 8 MB.',
       profileImageError: 'Não foi possível processar essa imagem.',
       guestCloudTitle: 'Cloud Save indisponível no modo Guest',
-      guestCloudText: 'Os jogos continuam salvando normalmente no próprio navegador, mas nada é enviado ao Supabase. Entre ou crie uma conta para sincronizar entre dispositivos.',
+      guestCloudText: 'Entre ou crie uma conta para ativar a sincronização entre dispositivos.',
       guestGoToLogin: 'Entrar ou criar conta',
       guestExit: 'Sair do modo Guest',
       accountNewPasswordTitle: 'Defina uma nova senha',
@@ -116,8 +116,8 @@
       cloudAuthorizationRequired: 'O Blood Machine reconheceu o portal, mas precisa da sua autorização antes de enviar o save.',
       cloudBridgeHandshake: 'Jogo aberto; concluindo conexão segura com o portal.',
       cloudBridgeEmpty: 'Jogo conectado. Ainda não há progresso persistente para enviar.',
-      cloudDatabaseReady: 'Banco conectado. Aguardando o save do Blood Machine.',
-      cloudSnapshotQueued: 'Save recebido do Blood Machine; aguardando gravação no Supabase.',
+      cloudDatabaseReady: 'Pronto para sincronizar. Aguardando o save do Blood Machine.',
+      cloudSnapshotQueued: 'Save recebido do Blood Machine; concluindo a sincronização.',
       cloudBridgeError: 'A conexão com o jogo falhou.',
       cloudSectionTitle: 'Sincronização na Nuvem',
       cloudSearchPlaceholder: 'Pesquisar jogo...',
@@ -144,6 +144,7 @@
       cloudStatusReceiving: 'Save recebido',
       cloudStatusEmpty: 'Sem save local',
       cloudStatusError: 'Erro',
+      authServiceUnavailable: 'Serviço de conta indisponível no momento.',
       authPasswordsMismatch: 'As senhas não são iguais.',
       authAccountCreated: 'Conta criada. Confira seu e-mail se a confirmação estiver ativada.',
       authSignedIn: 'Login realizado.',
@@ -259,7 +260,7 @@
       accountPassword: 'Password',
       accountPasswordConfirm: 'Confirm password',
       accountLoginHelp: 'Sign in to sync your saves across computers.',
-      accountSignupHelp: 'Create your ZOINHO account. Supabase may require email confirmation before the first sign-in.',
+      accountSignupHelp: 'Create your ZOINHO account. Email confirmation may be required before the first sign-in.',
       accountForgot: 'Forgot my password',
       accountLogout: 'Sign out',
       accountConnected: 'CONNECTED',
@@ -314,7 +315,7 @@
       profileImageTooLarge: 'The image is too large. Use a file up to 8 MB.',
       profileImageError: 'This image could not be processed.',
       guestCloudTitle: 'Cloud Save unavailable in Guest mode',
-      guestCloudText: 'Games still save normally in their own browser storage, but nothing is uploaded to Supabase. Sign in or create an account to sync across devices.',
+      guestCloudText: 'Sign in or create an account to enable synchronization across devices.',
       guestGoToLogin: 'Sign in or create account',
       guestExit: 'Leave Guest mode',
       accountNewPasswordTitle: 'Set a new password',
@@ -342,8 +343,8 @@
       cloudAuthorizationRequired: 'Blood Machine recognized the portal, but needs your approval before sending the save.',
       cloudBridgeHandshake: 'Game opened; completing the secure portal connection.',
       cloudBridgeEmpty: 'Game connected. There is no persistent progress to upload yet.',
-      cloudDatabaseReady: 'Database connected. Waiting for the Blood Machine save.',
-      cloudSnapshotQueued: 'Save received from Blood Machine; waiting for Supabase write.',
+      cloudDatabaseReady: 'Ready to sync. Waiting for the Blood Machine save.',
+      cloudSnapshotQueued: 'Save received from Blood Machine; finishing synchronization.',
       cloudBridgeError: 'The game connection failed.',
       cloudSectionTitle: 'Cloud Synchronization',
       cloudSearchPlaceholder: 'Search game...',
@@ -370,6 +371,7 @@
       cloudStatusReceiving: 'Save received',
       cloudStatusEmpty: 'No local save',
       cloudStatusError: 'Error',
+      authServiceUnavailable: 'Account service is currently unavailable.',
       authPasswordsMismatch: 'The passwords do not match.',
       authAccountCreated: 'Account created. Check your email if confirmation is enabled.',
       authSignedIn: 'Signed in.',
@@ -1822,7 +1824,6 @@
   const accountProfileAvatar = document.getElementById('accountProfileAvatar');
   const accountDisplayName = document.getElementById('accountDisplayName');
   const accountEquippedTitles = document.getElementById('accountEquippedTitles');
-  const accountIdentityMeta = document.getElementById('accountIdentityMeta');
   const closeAccountModalButton = document.getElementById('closeAccountModal');
   const guestEntryButton = document.getElementById('guestEntryButton');
   const accountProfileName = document.getElementById('accountProfileName');
@@ -1857,10 +1858,7 @@
   const cloudInfoGameName = document.getElementById('cloudInfoGameName');
   const cloudInfoStatusValue = document.getElementById('cloudInfoStatusValue');
   const cloudInfoLastSyncValue = document.getElementById('cloudInfoLastSyncValue');
-  const cloudInfoRevisionValue = document.getElementById('cloudInfoRevisionValue');
-  const cloudInfoSaveVersionValue = document.getElementById('cloudInfoSaveVersionValue');
   const cloudInfoClientUpdateValue = document.getElementById('cloudInfoClientUpdateValue');
-  const cloudInfoBridgeValue = document.getElementById('cloudInfoBridgeValue');
   const cloudInfoErrorRow = document.getElementById('cloudInfoErrorRow');
   const cloudInfoErrorValue = document.getElementById('cloudInfoErrorValue');
 
@@ -2298,10 +2296,7 @@
     cloudInfoStatusValue.textContent = healthy ? copy.cloudInfoSynced : copy.cloudInfoNotSynced;
     cloudInfoStatusValue.dataset.state = healthy ? 'synced' : 'unsynced';
     cloudInfoLastSyncValue.textContent = formatCloudTimestamp(cloud.lastSyncAt);
-    cloudInfoRevisionValue.textContent = cloud.revision == null ? copy.dateUnavailable : `#${cloud.revision}`;
-    cloudInfoSaveVersionValue.textContent = String(cloud.saveVersion || config.saveVersion || 1);
     cloudInfoClientUpdateValue.textContent = formatCloudTimestamp(cloud.clientUpdatedAt);
-    cloudInfoBridgeValue.textContent = bridgeStatusLabel(cloudInfoGameId);
     cloudInfoErrorValue.textContent = errorText || copy.cloudInfoNoError;
     cloudInfoErrorRow.hidden = !errorText;
   }
@@ -2374,7 +2369,6 @@
       if (accountDisplayName) accountDisplayName.textContent = displayName;
       if (accountEquippedTitles) accountEquippedTitles.innerHTML = signedIn ? titleBadgesMarkup(currentEquippedTitles(), 'is-account-title') : '';
       if (accountEmailDisplay) accountEmailDisplay.textContent = signedIn ? (authUser.email || 'ZOINHO Account') : copy.accountGuestLocal;
-      if (accountIdentityMeta) accountIdentityMeta.textContent = signedIn ? authUser.id : copy.accountGuestHelp;
       const statusLabel = document.getElementById('accountConnectionLabel');
       if (statusLabel) statusLabel.textContent = signedIn ? copy.accountConnected : copy.accountGuest;
     } else {
@@ -2491,7 +2485,7 @@
 
   async function submitAuthForm(event) {
     event.preventDefault();
-    if (!supabaseClient) return setAuthMessage(authError, 'Supabase indisponível.');
+    if (!supabaseClient) return setAuthMessage(authError, getCopy().authServiceUnavailable);
     setAuthMessage(authError);
 
     const email = authEmail.value.trim();
@@ -3200,7 +3194,7 @@
 
   function renderAdminLogs(){const root=document.getElementById('adminLogsList');if(!root)return;if(!adminLogsCache.length){root.innerHTML='<div class="community-review-empty">Nenhum log administrativo ainda.</div>';return}root.innerHTML=adminLogsCache.map(log=>`<article class="admin-row"><div class="admin-row-main"><div class="admin-row-title"><span class="admin-log-action">${escapeHtml(String(log.action||'').toUpperCase())}</span> · ${escapeHtml(log.entity_type||'')}</div><div class="admin-row-meta">${escapeHtml(formatReviewDate(log.created_at))} · ${escapeHtml(log.actor_role||'')} · ${escapeHtml(log.entity_id||'—')}</div><div class="admin-row-comment">${escapeHtml(JSON.stringify(log.details||{}))}</div></div></article>`).join('')}
 
-  function renderAdminOverview(){const gamesCount=adminGamesCache.length,published=adminGamesCache.filter(g=>g.published).length,hidden=adminReviewsCache.filter(r=>r.is_hidden).length;document.getElementById('adminMetricGames').textContent=String(gamesCount||games.length);document.getElementById('adminMetricPublished').textContent=String(gamesCount?published:games.length);document.getElementById('adminMetricReviews').textContent=String(adminReviewsCache.length);document.getElementById('adminMetricHidden').textContent=String(hidden);document.getElementById('adminRoleSummary').textContent=currentUserRole==='admin'?'Administrador: catálogo, Cloud Save, avaliações, exclusões e logs.':'Moderador: avaliações e comentários.'}
+  function renderAdminOverview(){const gamesCount=adminGamesCache.length,published=adminGamesCache.filter(g=>g.published).length,hidden=adminReviewsCache.filter(r=>r.is_hidden).length;document.getElementById('adminMetricGames').textContent=String(gamesCount||games.length);document.getElementById('adminMetricPublished').textContent=String(gamesCount?published:games.length);document.getElementById('adminMetricReviews').textContent=String(adminReviewsCache.length);document.getElementById('adminMetricHidden').textContent=String(hidden);document.getElementById('adminRoleSummary').textContent=currentUserRole==='admin'?'Administrador':'Moderador'}
 
   async function openAdminPanel(){if(!authUser||!['admin','moderator'].includes(currentUserRole))return;const modal=document.getElementById('adminModal');setAdminTab('overview');openModal(modal);await Promise.all([currentUserRole==='admin'?loadAdminGames():Promise.resolve([]),loadAdminReviews(),currentUserRole==='admin'?loadAdminLogs():Promise.resolve([])]);renderAdminOverview()}
 
