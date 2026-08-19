@@ -1,3 +1,4 @@
+[hidden] { display: none !important; }
 :root {
   --bg: #09090b;
   --bg-elevated: #101014;
@@ -898,3 +899,9 @@ html[data-theme="light"] .icon-moon { display: none; }
 
 .account-modal.is-guest-session .account-status-dot { color: #e7bf69; }
 .account-modal.is-guest-session .account-status-dot i { background: #e7bf69; box-shadow: 0 0 0 4px color-mix(in srgb, #e7bf69 12%, transparent); }
+
+/* v1.5.1 — estados de conta separados de verdade */
+.account-modal.is-guest-session .account-section-tabs { grid-template-columns: 1fr; }
+.account-modal.is-guest-session [data-account-tab="profile"],
+.account-modal.is-guest-session [data-account-pane="profile"] { display: none !important; }
+.account-modal.is-guest-session .account-footer { display: none !important; }
