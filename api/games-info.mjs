@@ -1,27 +1,14 @@
-const PROJECTS = {
-  'chrono-shards': 'prj_BK8OUol5PCEoPfcaJZnHXPwkgDP4',
-  'dead-signal': 'prj_lF0qOAUbkxt07mNPI0SgIQKAi3IK',
-  'neon-duel-beats': 'prj_kFvsBvjlPB52OLjzBIXOUUEZZj7f',
-  'arena-of-champions': 'prj_3MUHBh4RKfQgqWwP5gN7etU2c90a',
-  'arqueiro-lendario': 'prj_Sa9D4XBFZ86aDqmE1HdbAdn45zvy',
-  'blood-machine': 'prj_2rbGIFDHyVTO6bF7NG2IIwj1EwZD',
-  'heroes-battle': 'prj_DBfX8Ja1Gu6xnkLLkMd2JJlzO1Sv',
-  'knight-of-valor': 'prj_sisvPmCQnpkbye3Tazxct37i3Ghn',
-  'racing-stars': 'prj_f7wIzSN7iYI7FGq2z1HkJswK9tg4',
-  'neon-frontier': 'prj_Fq23uDlyuuKeKaPZxoKHuUqGY1ix',
-  'feiticaria': 'prj_t3iCJ8u6kOZ6Qe3ns4FMVFZgiTua',
-  'shuriken-master': 'prj_6HuSr4TgUhsMgJQgejvTVe2JwnzX'
-};
-
 const API_BASE = 'https://api.vercel.com';
 const REQUEST_TIMEOUT_MS = 8000;
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://lyzbwyhpeyxhrkfvnlfd.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_zA4KBJNOchE7JQityfbMxw_dghLUPM9';
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
       ...extraHeaders
     }
   });
@@ -42,19 +29,11 @@ function buildUrl(path, teamId) {
 
 async function vercelFetch(path, token, teamId) {
   const response = await fetch(buildUrl(path, teamId), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/json'
-    },
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   });
-
   const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = body?.error?.message || body?.message || `Vercel API returned ${response.status}`;
-    throw new Error(message);
-  }
-
+  if (!response.ok) throw new Error(body?.error?.message || body?.message || `Vercel API returned ${response.status}`);
   return body;
 }
 
@@ -63,11 +42,7 @@ async function loadProjectInfo(projectId, token, teamId) {
     vercelFetch(`/v9/projects/${encodeURIComponent(projectId)}`, token, teamId),
     vercelFetch(`/v6/deployments?projectId=${encodeURIComponent(projectId)}&target=production&limit=1&state=READY`, token, teamId)
   ]);
-
-  const latestDeployment = Array.isArray(deploymentsResponse?.deployments)
-    ? deploymentsResponse.deployments[0]
-    : null;
-
+  const latestDeployment = Array.isArray(deploymentsResponse?.deployments) ? deploymentsResponse.deployments[0] : null;
   return {
     createdAt: toIso(project?.createdAt),
     updatedAt: toIso(latestDeployment?.ready ?? latestDeployment?.createdAt ?? latestDeployment?.created),
@@ -75,57 +50,53 @@ async function loadProjectInfo(projectId, token, teamId) {
   };
 }
 
+async function loadPublishedProjects() {
+  const url = new URL('/rest/v1/games', SUPABASE_URL);
+  url.searchParams.set('published', 'eq.true');
+  url.searchParams.set('vercel_project_id', 'not.is.null');
+  url.searchParams.set('select', 'id,vercel_project_id');
+  const response = await fetch(url, {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Accept: 'application/json'
+    },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  });
+  if (!response.ok) throw new Error(`Supabase catalog returned ${response.status}`);
+  const rows = await response.json();
+  return Array.isArray(rows) ? rows.filter(row => row?.id && row?.vercel_project_id) : [];
+}
+
 export default {
   async fetch(request) {
-    if (!['GET', 'HEAD'].includes(request.method)) {
-      return json({ ok: false, error: 'Method not allowed' }, 405, { Allow: 'GET, HEAD' });
-    }
+    if (!['GET', 'HEAD'].includes(request.method)) return json({ ok:false, error:'Method not allowed' }, 405, { Allow:'GET, HEAD' });
 
     const token = process.env.VERCEL_API_TOKEN;
     const teamId = process.env.VERCEL_TEAM_ID || '';
+    if (!token) return json({ ok:false, error:'VERCEL_API_TOKEN is not configured.' }, 500, { 'Cache-Control':'no-store' });
 
-    if (!token) {
-      return json({
-        ok: false,
-        error: 'VERCEL_API_TOKEN is not configured.'
-      }, 500, { 'Cache-Control': 'no-store' });
+    let projects;
+    try {
+      projects = await loadPublishedProjects();
+    } catch (error) {
+      console.error('[games-info] catalog:', error);
+      return json({ ok:false, error:'Catalog unavailable.' }, 502);
     }
 
-    const entries = await Promise.all(
-      Object.entries(PROJECTS).map(async ([gameId, projectId]) => {
-        try {
-          const info = await loadProjectInfo(projectId, token, teamId);
-          return [gameId, info];
-        } catch (error) {
-          console.error(`[games-info] ${gameId}:`, error);
-          return [gameId, {
-            createdAt: null,
-            updatedAt: null,
-            status: 'error'
-          }];
-        }
-      })
-    );
+    const entries = await Promise.all(projects.map(async row => {
+      try {
+        return [row.id, await loadProjectInfo(row.vercel_project_id, token, teamId)];
+      } catch (error) {
+        console.error(`[games-info] ${row.id}:`, error);
+        return [row.id, { createdAt:null, updatedAt:null, status:'error' }];
+      }
+    }));
 
     const games = Object.fromEntries(entries);
     const successCount = entries.filter(([, info]) => info.status === 'ok').length;
+    const payload = { ok: successCount > 0 || entries.length === 0, generatedAt:new Date().toISOString(), games };
 
-    const payload = {
-      ok: successCount > 0,
-      generatedAt: new Date().toISOString(),
-      games
-    };
-
-    if (request.method === 'HEAD') {
-      return new Response(null, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
-        }
-      });
-    }
-
-    return json(payload, successCount > 0 ? 200 : 502);
+    if (request.method === 'HEAD') return new Response(null, { status:200, headers:{ 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'public, s-maxage=60, stale-while-revalidate=300' } });
+    return json(payload, successCount > 0 || entries.length === 0 ? 200 : 502);
   }
 };
