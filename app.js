@@ -42,8 +42,8 @@
       cloudReadyText: 'Blood Machine será sincronizado automaticamente quando aberto pelo portal.',
       cloudNeverSynced: 'Ainda não sincronizado nesta sessão',
       cloudLastSync: 'Última sincronização: {time}',
-      cloudBridgeWaiting: 'Aguardando o Blood Machine abrir pelo portal.',
-      cloudBridgeConnected: 'Blood Machine conectado ao portal.',
+      cloudBridgeWaiting: 'Aguardando um jogo compatível abrir pelo portal.',
+      cloudBridgeConnected: 'Jogo conectado ao portal.',
       cloudSnapshotReceived: 'Save recebido do Blood Machine; enviando para a nuvem.',
       cloudSyncNow: 'Sincronizar agora',
       cloudOpenGameFirst: 'Abra o Blood Machine pelo portal antes de sincronizar.',
@@ -52,8 +52,8 @@
       cloudHandshaking: 'Conectando',
       cloudAuthorizeGame: 'Autorize a conexão na janela do jogo.',
       cloudAuthorizationRequired: 'O Blood Machine reconheceu o portal, mas precisa da sua autorização antes de enviar o save.',
-      cloudBridgeHandshake: 'Blood Machine aberto; concluindo conexão segura com o portal.',
-      cloudBridgeEmpty: 'Blood Machine conectado. Ainda não há progresso persistente para enviar.',
+      cloudBridgeHandshake: 'Jogo aberto; concluindo conexão segura com o portal.',
+      cloudBridgeEmpty: 'Jogo conectado. Ainda não há progresso persistente para enviar.',
       cloudDatabaseReady: 'Banco conectado. Aguardando o save do Blood Machine.',
       cloudSnapshotQueued: 'Save recebido do Blood Machine; aguardando gravação no Supabase.',
       cloudBridgeError: 'A conexão com o jogo falhou.',
@@ -200,8 +200,8 @@
       cloudReadyText: 'Blood Machine syncs automatically when launched through the portal.',
       cloudNeverSynced: 'Not synced in this session yet',
       cloudLastSync: 'Last sync: {time}',
-      cloudBridgeWaiting: 'Waiting for Blood Machine to be launched through the portal.',
-      cloudBridgeConnected: 'Blood Machine connected to the portal.',
+      cloudBridgeWaiting: 'Waiting for a compatible game to be launched through the portal.',
+      cloudBridgeConnected: 'Game connected to the portal.',
       cloudSnapshotReceived: 'Save received from Blood Machine; uploading to the cloud.',
       cloudSyncNow: 'Sync now',
       cloudOpenGameFirst: 'Launch Blood Machine through the portal before syncing.',
@@ -210,8 +210,8 @@
       cloudHandshaking: 'Connecting',
       cloudAuthorizeGame: 'Authorize the connection in the game window.',
       cloudAuthorizationRequired: 'Blood Machine recognized the portal, but needs your approval before sending the save.',
-      cloudBridgeHandshake: 'Blood Machine opened; completing the secure portal connection.',
-      cloudBridgeEmpty: 'Blood Machine connected. There is no persistent progress to upload yet.',
+      cloudBridgeHandshake: 'Game opened; completing the secure portal connection.',
+      cloudBridgeEmpty: 'Game connected. There is no persistent progress to upload yet.',
       cloudDatabaseReady: 'Database connected. Waiting for the Blood Machine save.',
       cloudSnapshotQueued: 'Save received from Blood Machine; waiting for Supabase write.',
       cloudBridgeError: 'The game connection failed.',
@@ -820,6 +820,12 @@
       origin: 'https://zombie-survival-six.vercel.app',
       saveVersion: 1,
       saveKeys: ['dead_signal_nightfall_v1']
+    }],
+    ['heroes-battle', {
+      title: 'Heroes Battle',
+      origin: 'https://heroes-battle-ultimate-version.vercel.app',
+      saveVersion: 1,
+      saveKeys: ['hb-rune-progression-v2', 'hb-reforged2-best']
     }]
   ]);
 
