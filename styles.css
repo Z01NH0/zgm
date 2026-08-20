@@ -869,6 +869,18 @@ html[data-theme="light"] .icon-moon { display: none; }
 .account-modal.is-auth-gate .modal-header { border-bottom-color: color-mix(in srgb, var(--accent) 28%, var(--line)); }
 .auth-or { display: flex; align-items: center; gap: 12px; color: var(--text-faint); font-size: 0.5625rem; font-weight: 850; text-transform: uppercase; letter-spacing: .12em; }
 .auth-or::before, .auth-or::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+.auth-or-secondary { margin-top: -3px; }
+.google-auth-button {
+  width: 100%; min-height: 48px; justify-content: center; gap: 11px; border: 1px solid var(--line-strong);
+  color: var(--text); background: var(--surface); font-weight: 850; transition: .18s ease;
+}
+.google-auth-button:hover { border-color: color-mix(in srgb, var(--text) 34%, var(--line)); background: var(--surface-hover); transform: translateY(-1px); }
+.google-auth-button:disabled { opacity: .62; cursor: wait; transform: none; }
+.google-auth-mark {
+  width: 25px; height: 25px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%;
+  color: #202124; background: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+  font: 900 0.875rem/1 Arial, Helvetica, sans-serif;
+}
 .guest-entry-button {
   width: 100%; min-height: 48px; justify-content: center; border: 1px solid color-mix(in srgb, #d7a94e 42%, var(--line));
   background: color-mix(in srgb, #d7a94e 10%, var(--surface)); color: var(--text); font-weight: 850;
