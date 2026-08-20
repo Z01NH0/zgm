@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=platform-1.8.1" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.8.2" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -233,7 +233,12 @@
           <p class="auth-help" id="authHelp" data-i18n="accountLoginHelp">Entre para sincronizar seus saves entre computadores.</p>
           <p class="auth-error" id="authError" role="alert" hidden></p>
           <button class="button button-primary auth-submit" id="authSubmit" type="submit" data-i18n="accountLogin">Entrar</button>
-          <div class="auth-or"><span data-i18n="authOr">ou</span></div>
+          <div class="auth-or"><span data-i18n="authOrGoogle">ou continue com</span></div>
+          <button class="button google-auth-button" id="googleAuthButton" type="button">
+            <span class="google-auth-mark" aria-hidden="true">G</span>
+            <span data-i18n="authGoogleButton">Continuar com Google</span>
+          </button>
+          <div class="auth-or auth-or-secondary"><span data-i18n="authOrGuest">ou</span></div>
           <button class="button guest-entry-button" id="guestEntryButton" type="button" data-i18n="accountGuestButton">Jogar como Guest (⚠️Sem saves na nuvem⚠️)</button>
           <button class="auth-link" id="forgotPassword" type="button" data-i18n="accountForgot">Esqueci minha senha</button>
         </form>
@@ -560,7 +565,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=platform-1.8.1"></script>
-  <script src="app.js?v=platform-1.8.1"></script>
+  <script src="supabase-config.js?v=platform-1.8.2"></script>
+  <script src="app.js?v=platform-1.8.2"></script>
 </body>
 </html>
