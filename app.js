@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.8.2';
+  const ZOINHO_CLOUD_BUILD = '1.8.3';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -41,11 +41,7 @@
       accountGuestButton: 'Jogar como Guest (⚠️Sem saves na nuvem⚠️)',
       accountGuestHelp: 'Entra no portal sem conta. O progresso continua local em cada jogo e não é enviado para a nuvem.',
       authOr: 'ou',
-      authOrGoogle: 'ou continue com',
       authOrGuest: 'ou',
-      authGoogleButton: 'Continuar com Google',
-      authGoogleStarting: 'Abrindo o Google...',
-      authGoogleUnavailable: 'O login com Google ainda não está configurado.',
       authRateLimit: 'Muitas solicitações foram feitas recentemente. Aguarde alguns minutos e tente novamente.',
       authInvalidCredentials: 'E-mail ou senha incorretos.',
       authEmailNotConfirmed: 'Este e-mail ainda precisa ser confirmado antes do login.',
@@ -277,11 +273,7 @@
       accountGuestButton: 'Play as Guest (⚠️ No cloud saves ⚠️)',
       accountGuestHelp: 'Enter the portal without an account. Progress remains local inside each game and is not uploaded to the cloud.',
       authOr: 'or',
-      authOrGoogle: 'or continue with',
       authOrGuest: 'or',
-      authGoogleButton: 'Continue with Google',
-      authGoogleStarting: 'Opening Google...',
-      authGoogleUnavailable: 'Google sign-in is not configured yet.',
       authRateLimit: 'Too many requests were made recently. Wait a few minutes and try again.',
       authInvalidCredentials: 'Incorrect email or password.',
       authEmailNotConfirmed: 'This email still needs to be confirmed before signing in.',
@@ -1832,7 +1824,6 @@
   const authHelp = document.getElementById('authHelp');
   const authError = document.getElementById('authError');
   const authSubmit = document.getElementById('authSubmit');
-  const googleAuthButton = document.getElementById('googleAuthButton');
   const forgotPassword = document.getElementById('forgotPassword');
   const recoveryForm = document.getElementById('recoveryForm');
   const recoveryPassword = document.getElementById('recoveryPassword');
@@ -2266,7 +2257,6 @@
     if (/email rate limit exceeded|rate limit|too many requests/.test(normalized)) return copy.authRateLimit;
     if (/invalid login credentials|invalid credentials/.test(normalized)) return copy.authInvalidCredentials;
     if (/email not confirmed|email_not_confirmed/.test(normalized)) return copy.authEmailNotConfirmed;
-    if (/provider.*not enabled|unsupported provider|oauth provider/.test(normalized)) return copy.authGoogleUnavailable;
     return raw || copy.authServiceUnavailable;
   }
 
@@ -2551,26 +2541,6 @@
       setAuthMessage(authError, friendlyAuthError(error));
     } finally {
       authSubmit.disabled = false;
-    }
-  }
-
-  async function signInWithGoogle() {
-    if (!supabaseClient) return setAuthMessage(authError, getCopy().authServiceUnavailable);
-    setAuthMessage(authError);
-    if (googleAuthButton) googleAuthButton.disabled = true;
-    try {
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: authRedirectUrl() }
-      });
-      if (error) throw error;
-      // Em navegadores comuns o método redireciona imediatamente. Se isso não ocorrer,
-      // o botão é reativado pelo finally para que a interface não fique presa.
-    } catch (error) {
-      console.warn('[ZOINHO Auth] Falha no login com Google.', error);
-      setAuthMessage(authError, friendlyAuthError(error));
-    } finally {
-      if (googleAuthButton) googleAuthButton.disabled = false;
     }
   }
 
@@ -3478,7 +3448,6 @@
   });
   document.querySelectorAll('[data-auth-mode]').forEach(button => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));
   authForm.addEventListener('submit', submitAuthForm);
-  googleAuthButton?.addEventListener('click', signInWithGoogle);
   guestEntryButton?.addEventListener('click', enterGuestMode);
   document.querySelectorAll('[data-account-tab]').forEach(button => button.addEventListener('click', () => setAccountTab(button.dataset.accountTab)));
   chooseProfilePhoto?.addEventListener('click', () => profilePhotoInput?.click());
