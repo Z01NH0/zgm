@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.8.1';
+  const ZOINHO_CLOUD_BUILD = '1.8.2';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -33,7 +33,7 @@
       accountPassword: 'Senha',
       accountPasswordConfirm: 'Confirmar senha',
       accountLoginHelp: 'Entre para sincronizar seus saves entre computadores.',
-      accountSignupHelp: 'Crie sua conta ZOINHO. Talvez seja necessário confirmar o e-mail antes do primeiro login.',
+      accountSignupHelp: 'Crie sua conta ZOINHO e comece a usar a sincronização entre dispositivos.',
       accountForgot: 'Esqueci minha senha',
       accountLogout: 'Sair da conta',
       accountConnected: 'CONECTADO',
@@ -41,6 +41,14 @@
       accountGuestButton: 'Jogar como Guest (⚠️Sem saves na nuvem⚠️)',
       accountGuestHelp: 'Entra no portal sem conta. O progresso continua local em cada jogo e não é enviado para a nuvem.',
       authOr: 'ou',
+      authOrGoogle: 'ou continue com',
+      authOrGuest: 'ou',
+      authGoogleButton: 'Continuar com Google',
+      authGoogleStarting: 'Abrindo o Google...',
+      authGoogleUnavailable: 'O login com Google ainda não está configurado.',
+      authRateLimit: 'Muitas solicitações foram feitas recentemente. Aguarde alguns minutos e tente novamente.',
+      authInvalidCredentials: 'E-mail ou senha incorretos.',
+      authEmailNotConfirmed: 'Este e-mail ainda precisa ser confirmado antes do login.',
       accountGuestSubtitle: 'Guest • sem saves na nuvem',
       accountGuestLocal: 'Modo Guest • dados locais neste dispositivo',
       accountProfileTab: 'Perfil',
@@ -146,7 +154,8 @@
       cloudStatusError: 'Erro',
       authServiceUnavailable: 'Serviço de conta indisponível no momento.',
       authPasswordsMismatch: 'As senhas não são iguais.',
-      authAccountCreated: 'Conta criada. Confira seu e-mail se a confirmação estiver ativada.',
+      authAccountCreated: 'Conta criada. Você já está conectado.',
+      authAccountCreatedNeedsConfirmation: 'Conta criada, mas a confirmação de e-mail ainda está ativada. Verifique sua caixa de entrada.',
       authSignedIn: 'Login realizado.',
       authSignedOut: 'Você saiu da conta.',
       authResetSent: 'E-mail de recuperação enviado.',
@@ -260,7 +269,7 @@
       accountPassword: 'Password',
       accountPasswordConfirm: 'Confirm password',
       accountLoginHelp: 'Sign in to sync your saves across computers.',
-      accountSignupHelp: 'Create your ZOINHO account. Email confirmation may be required before the first sign-in.',
+      accountSignupHelp: 'Create your ZOINHO account and start syncing across devices.',
       accountForgot: 'Forgot my password',
       accountLogout: 'Sign out',
       accountConnected: 'CONNECTED',
@@ -268,6 +277,14 @@
       accountGuestButton: 'Play as Guest (⚠️ No cloud saves ⚠️)',
       accountGuestHelp: 'Enter the portal without an account. Progress remains local inside each game and is not uploaded to the cloud.',
       authOr: 'or',
+      authOrGoogle: 'or continue with',
+      authOrGuest: 'or',
+      authGoogleButton: 'Continue with Google',
+      authGoogleStarting: 'Opening Google...',
+      authGoogleUnavailable: 'Google sign-in is not configured yet.',
+      authRateLimit: 'Too many requests were made recently. Wait a few minutes and try again.',
+      authInvalidCredentials: 'Incorrect email or password.',
+      authEmailNotConfirmed: 'This email still needs to be confirmed before signing in.',
       accountGuestSubtitle: 'Guest • no cloud saves',
       accountGuestLocal: 'Guest mode • local data on this device',
       accountProfileTab: 'Profile',
@@ -373,7 +390,8 @@
       cloudStatusError: 'Error',
       authServiceUnavailable: 'Account service is currently unavailable.',
       authPasswordsMismatch: 'The passwords do not match.',
-      authAccountCreated: 'Account created. Check your email if confirmation is enabled.',
+      authAccountCreated: 'Account created. You are already signed in.',
+      authAccountCreatedNeedsConfirmation: 'Account created, but email confirmation is still enabled. Check your inbox.',
       authSignedIn: 'Signed in.',
       authSignedOut: 'Signed out.',
       authResetSent: 'Recovery email sent.',
@@ -1814,6 +1832,7 @@
   const authHelp = document.getElementById('authHelp');
   const authError = document.getElementById('authError');
   const authSubmit = document.getElementById('authSubmit');
+  const googleAuthButton = document.getElementById('googleAuthButton');
   const forgotPassword = document.getElementById('forgotPassword');
   const recoveryForm = document.getElementById('recoveryForm');
   const recoveryPassword = document.getElementById('recoveryPassword');
@@ -2240,6 +2259,21 @@
     element.hidden = !message;
   }
 
+  function friendlyAuthError(error) {
+    const copy = getCopy();
+    const raw = String(error?.message || error || '').trim();
+    const normalized = raw.toLowerCase();
+    if (/email rate limit exceeded|rate limit|too many requests/.test(normalized)) return copy.authRateLimit;
+    if (/invalid login credentials|invalid credentials/.test(normalized)) return copy.authInvalidCredentials;
+    if (/email not confirmed|email_not_confirmed/.test(normalized)) return copy.authEmailNotConfirmed;
+    if (/provider.*not enabled|unsupported provider|oauth provider/.test(normalized)) return copy.authGoogleUnavailable;
+    return raw || copy.authServiceUnavailable;
+  }
+
+  function authRedirectUrl() {
+    return `${location.origin}${location.pathname}`;
+  }
+
   function setAuthMode(mode) {
     authMode = mode === 'signup' ? 'signup' : 'login';
     document.querySelectorAll('[data-auth-mode]').forEach(button => {
@@ -2497,14 +2531,14 @@
     authSubmit.disabled = true;
     try {
       if (authMode === 'signup') {
-        const { data, error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${location.origin}${location.pathname}` }
-        });
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
         if (error) throw error;
-        showToast(getCopy().authAccountCreated);
-        if (!data?.session) setAuthMode('login');
+        if (data?.session) {
+          showToast(getCopy().authAccountCreated);
+        } else {
+          showToast(getCopy().authAccountCreatedNeedsConfirmation);
+          setAuthMode('login');
+        }
       } else {
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -2513,9 +2547,30 @@
       authPassword.value = '';
       authPasswordConfirm.value = '';
     } catch (error) {
-      setAuthMessage(authError, error?.message || String(error));
+      console.warn('[ZOINHO Auth] Falha de autenticação.', error);
+      setAuthMessage(authError, friendlyAuthError(error));
     } finally {
       authSubmit.disabled = false;
+    }
+  }
+
+  async function signInWithGoogle() {
+    if (!supabaseClient) return setAuthMessage(authError, getCopy().authServiceUnavailable);
+    setAuthMessage(authError);
+    if (googleAuthButton) googleAuthButton.disabled = true;
+    try {
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: authRedirectUrl() }
+      });
+      if (error) throw error;
+      // Em navegadores comuns o método redireciona imediatamente. Se isso não ocorrer,
+      // o botão é reativado pelo finally para que a interface não fique presa.
+    } catch (error) {
+      console.warn('[ZOINHO Auth] Falha no login com Google.', error);
+      setAuthMessage(authError, friendlyAuthError(error));
+    } finally {
+      if (googleAuthButton) googleAuthButton.disabled = false;
     }
   }
 
@@ -2529,9 +2584,12 @@
     }
     setAuthMessage(authError);
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: `${location.origin}${location.pathname}`
+      redirectTo: authRedirectUrl()
     });
-    if (error) setAuthMessage(authError, error.message);
+    if (error) {
+      console.warn('[ZOINHO Auth] Falha ao solicitar recuperação.', error);
+      setAuthMessage(authError, friendlyAuthError(error));
+    }
     else showToast(getCopy().authResetSent);
   }
 
@@ -3420,6 +3478,7 @@
   });
   document.querySelectorAll('[data-auth-mode]').forEach(button => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));
   authForm.addEventListener('submit', submitAuthForm);
+  googleAuthButton?.addEventListener('click', signInWithGoogle);
   guestEntryButton?.addEventListener('click', enterGuestMode);
   document.querySelectorAll('[data-account-tab]').forEach(button => button.addEventListener('click', () => setAccountTab(button.dataset.accountTab)));
   chooseProfilePhoto?.addEventListener('click', () => profilePhotoInput?.click());
