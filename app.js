@@ -1318,6 +1318,9 @@
     url.searchParams.set('zoinhoBridge', '1');
     url.searchParams.set('zoinhoBridgeVersion', String(STORAGE_BRIDGE_VERSION));
     url.searchParams.set('zoinhoAutoSync', '1');
+    // A origem do portal viaja com o lançamento para que a bridge consiga validar
+    // automaticamente o opener desta sessão sem pedir confirmação ao jogador.
+    url.searchParams.set('zoinhoPortalOrigin', location.origin);
     return url.toString();
   }
 
@@ -1669,7 +1672,7 @@
     if (!active.nonce) active.nonce = makeBridgeNonce();
     activeBridgeWindows.set(gameId, active);
     bridgeWindowBindings.set(source, { gameId, userId, nonce: active.nonce });
-    setBridgeState('handshaking', gameId, null, 'READY recebido; aguardando autorização do jogo.');
+    setBridgeState('handshaking', gameId, null, 'READY recebido; validando conexão automática.');
 
     postToActive(active, {
       protocol: STORAGE_BRIDGE_PROTOCOL,
@@ -1686,7 +1689,7 @@
     active.handshakeTimer = setTimeout(() => {
       const current = activeBridgeWindows.get(gameId);
       if (!current || current !== active || current.authorized) return;
-      const error = new Error('O jogo anunciou READY, mas não concluiu o handshake. Verifique a autorização exibida no jogo.');
+      const error = new Error('O jogo anunciou READY, mas não concluiu o handshake automático.');
       setBridgeState('error', gameId, error, 'handshake-timeout');
     }, BRIDGE_HANDSHAKE_TIMEOUT);
   }
