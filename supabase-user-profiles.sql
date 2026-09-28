@@ -1,4 +1,6 @@
--- ZOINHO GAMES — Perfis de usuário v1.6.0
+-- ZOINHO GAMES — Perfis de usuário v1.6.0 (BASE)
+-- BASE ATUAL: execute antes de supabase-platform-v1.10-hardening.sql.
+-- A v1.10 adiciona avatar_path + Storage mantendo avatar_data_url como fallback legado.
 -- Execute este arquivo UMA VEZ (pode ser reexecutado com segurança) no SQL Editor
 -- do MESMO projeto Supabase usado pelo Cloud Save.
 --

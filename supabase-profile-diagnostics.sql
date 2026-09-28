@@ -1,4 +1,4 @@
--- ZOINHO GAMES — diagnóstico não destrutivo do perfil v1.6.0
+-- ZOINHO GAMES — diagnóstico não destrutivo do perfil v1.10.0
 
 select
   c.relname as table_name,
@@ -33,8 +33,19 @@ from pg_indexes
 where schemaname = 'public' and tablename = 'user_profiles'
 order by indexname;
 
+select id, public, file_size_limit, allowed_mime_types
+from storage.buckets
+where id = 'profile-avatars';
+
+select policyname, cmd, roles, qual, with_check
+from pg_policies
+where schemaname = 'storage' and tablename = 'objects'
+  and policyname like 'profile_avatars_%'
+order by policyname;
+
 select user_id, nickname, nickname_changed_at, updated_at,
-       char_length(avatar_data_url) as avatar_chars
+       avatar_path,
+       char_length(avatar_data_url) as legacy_avatar_chars
 from public.user_profiles
 order by updated_at desc
 limit 20;

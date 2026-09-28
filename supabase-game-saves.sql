@@ -1,4 +1,6 @@
--- ZOINHO GAMES - Cloud Save v1.3
+-- ZOINHO GAMES - Cloud Save v1.3 (BASE)
+-- BASE ATUAL: execute este arquivo antes de supabase-platform-v1.10-hardening.sql.
+-- A proteção de concorrência e o gate de versão vivem na migration v1.10.
 -- Execute este arquivo inteiro no SQL Editor do MESMO projeto Supabase.
 -- Pode ser reexecutado: ele ajusta tabela, grants, RLS, policies e trigger sem criar uma segunda tabela.
 

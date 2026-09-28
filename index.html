@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=platform-1.8.3" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.10.0" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -345,6 +345,8 @@
           <div><dt data-i18n="cloudInfoStatus">Status</dt><dd id="cloudInfoStatusValue" data-state="unsynced">—</dd></div>
           <div><dt data-i18n="cloudInfoLastSync">Última sincronização</dt><dd id="cloudInfoLastSyncValue">—</dd></div>
           <div><dt data-i18n="cloudInfoClientUpdate">Última alteração no jogo</dt><dd id="cloudInfoClientUpdateValue">—</dd></div>
+          <div><dt data-i18n="cloudInfoRevision">Revisão do save</dt><dd id="cloudInfoRevisionValue">—</dd></div>
+          <div><dt data-i18n="cloudInfoSaveVersion">Versão do save</dt><dd id="cloudInfoSaveVersionValue">—</dd></div>
           <div class="cloud-info-error" id="cloudInfoErrorRow" hidden><dt data-i18n="cloudInfoError">Último erro</dt><dd id="cloudInfoErrorValue">—</dd></div>
         </dl>
       </div>
@@ -536,7 +538,7 @@
       <div class="modal-header"><div><span class="section-kicker">CATÁLOGO</span><h2 id="adminGameModalTitle">Adicionar jogo</h2></div><button class="icon-button close-modal" id="closeAdminGameModal" type="button" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       <div class="admin-game-form-grid">
         <label><span>ID / slug</span><input id="adminGameId" required pattern="[a-z0-9][a-z0-9-]{1,63}" placeholder="meu-jogo" /></label>
-        <label><span>Ordem</span><input id="adminGameOrder" type="number" min="1" max="9999" value="999" /></label>
+        <label><span>Ordem interna (legado)</span><input id="adminGameOrder" type="number" min="1" max="9999" value="999" /><small>A vitrine pública é sempre alfabética.</small></label>
         <label class="span-2"><span>Nome</span><input id="adminGameTitle" required maxlength="100" /></label>
         <label class="span-2"><span>Link do jogo</span><input id="adminGameUrl" type="url" required placeholder="https://meu-jogo.vercel.app" /></label>
         <label><span>Kicker</span><input id="adminGameKicker" maxlength="40" placeholder="ROGUELITE" /></label>
@@ -551,7 +553,7 @@
         <label class="span-2"><span>Capa</span><div class="admin-cover-row"><img id="adminCoverPreview" alt="Prévia da capa" /><input id="adminGameCoverFile" type="file" accept="image/png,image/jpeg,image/webp" /><input id="adminGameImageUrl" placeholder="URL/caminho atual da capa" /></div></label>
         <label class="span-2"><span>Vercel Project ID (opcional, para datas automáticas)</span><input id="adminGameVercelProjectId" placeholder="prj_..." /></label>
         <div class="admin-check-row span-2"><label><input id="adminGamePublished" type="checkbox" checked /> Publicado</label><label><input id="adminGameFeatured" type="checkbox" /> Destaque</label><label><input id="adminGameDatesAvailable" type="checkbox" checked /> Mostrar datas</label></div>
-        <fieldset class="admin-bridge-fieldset span-2"><legend>Cloud Save</legend><p class="admin-field-note">Ative somente em jogos já preparados para sincronização.</p><label><input id="adminGameBridgeEnabled" type="checkbox" /> Integrado</label><div class="admin-game-form-grid bridge-fields"><label class="span-2"><span>Origin do jogo</span><input id="adminGameBridgeOrigin" placeholder="https://meu-jogo.vercel.app" /></label><label><span>Save version</span><input id="adminGameBridgeVersion" type="number" min="1" value="1" /></label><label><span>Save keys (vírgulas)</span><input id="adminGameBridgeKeys" /></label></div></fieldset>
+        <fieldset class="admin-bridge-fieldset span-2"><legend>Cloud Save</legend><p class="admin-field-note">Ative somente em jogos já preparados para sincronização. Aumente a Save version apenas quando existir migração/compatibilidade no jogo.</p><label><input id="adminGameBridgeEnabled" type="checkbox" /> Integrado</label><div class="admin-game-form-grid bridge-fields"><label class="span-2"><span>Origin do jogo</span><input id="adminGameBridgeOrigin" placeholder="https://meu-jogo.vercel.app" /></label><label><span>Save version</span><input id="adminGameBridgeVersion" type="number" min="1" value="1" /></label><label><span>Save keys (vírgulas)</span><input id="adminGameBridgeKeys" /></label></div></fieldset>
       </div>
       <p class="auth-error" id="adminGameError" hidden></p>
       <div class="modal-footer"><button class="button button-ghost" id="adminDeleteGame" type="button" hidden>Excluir jogo</button><button class="button button-primary" type="submit">Salvar jogo</button></div>
@@ -560,7 +562,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=platform-1.8.3"></script>
-  <script src="app.js?v=platform-1.9.0"></script>
+  <script src="supabase-config.js?v=platform-1.10.0"></script>
+  <script src="app.js?v=platform-1.10.0"></script>
 </body>
 </html>

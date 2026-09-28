@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.9.0';
+  const ZOINHO_CLOUD_BUILD = '1.10.0';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -10,11 +10,16 @@
     language: 'zoinho-games-language',
     fontSize: 'zoinho-games-font-size-v1',
     fontFamily: 'zoinho-games-font-family-v1',
-    bridgeCache: 'zoinho-games-storage-bridge-v2',
-    bridgeCacheLegacy: 'zoinho-games-storage-bridge-v1',
     localProfiles: 'zoinho-games-local-profiles-v1',
     guestSession: 'zoinho-games-guest-session-v1'
   };
+
+  // A v1/v2 antiga mantinha uma cópia redundante dos saves dos jogos no domínio
+  // do portal, mas ela nunca era usada para restore. A v1.10 remove esse estado morto:
+  // o jogo mantém o save local e o banco mantém a cópia Cloud.
+  for (const staleKey of ['zoinho-games-storage-bridge-v1', 'zoinho-games-storage-bridge-v2']) {
+    try { localStorage.removeItem(staleKey); } catch {}
+  }
 
   const translations = {
     'pt-BR': {
@@ -105,23 +110,21 @@
       cloudSyncing: 'Sincronizando',
       cloudSynced: 'Sincronizado',
       cloudError: 'Erro',
-      cloudReadyText: 'Blood Machine será sincronizado automaticamente quando aberto pelo portal.',
+      cloudReadyText: 'Jogos integrados são sincronizados automaticamente quando abertos pelo portal.',
       cloudNeverSynced: 'Ainda não sincronizado nesta sessão',
       cloudLastSync: 'Última sincronização: {time}',
       cloudBridgeWaiting: 'Aguardando um jogo compatível abrir pelo portal.',
       cloudBridgeConnected: 'Jogo conectado ao portal.',
-      cloudSnapshotReceived: 'Save recebido do Blood Machine; enviando para a nuvem.',
+      cloudSnapshotReceived: 'Save recebido do jogo; enviando para a nuvem.',
       cloudSyncNow: 'Sincronizar novamente',
-      cloudOpenGameFirst: 'Abra o Blood Machine pelo portal antes de sincronizar.',
+      cloudOpenGameFirst: 'Abra pelo portal um jogo integrado antes de sincronizar.',
       cloudBridgeAccountChanged: 'A conta mudou depois que o jogo foi aberto. Reabra o jogo pelo portal.',
       cloudChecking: 'Verificando',
       cloudHandshaking: 'Conectando',
-      cloudAuthorizeGame: 'Autorize a conexão na janela do jogo.',
-      cloudAuthorizationRequired: 'O Blood Machine reconheceu o portal, mas precisa da sua autorização antes de enviar o save.',
       cloudBridgeHandshake: 'Jogo aberto; concluindo conexão segura com o portal.',
       cloudBridgeEmpty: 'Jogo conectado. Ainda não há progresso persistente para enviar.',
-      cloudDatabaseReady: 'Pronto para sincronizar. Aguardando o save do Blood Machine.',
-      cloudSnapshotQueued: 'Save recebido do Blood Machine; concluindo a sincronização.',
+      cloudDatabaseReady: 'Pronto para sincronizar. Aguardando o save do jogo conectado.',
+      cloudSnapshotQueued: 'Save recebido do jogo; concluindo a sincronização.',
       cloudBridgeError: 'A conexão com o jogo falhou.',
       cloudSectionTitle: 'Sincronização na Nuvem',
       cloudSearchPlaceholder: 'Pesquisar jogo...',
@@ -144,10 +147,13 @@
       cloudStatusChecking: 'Verificando',
       cloudStatusWaiting: 'Aguardando o jogo',
       cloudStatusConnected: 'Conectado',
-      cloudStatusAuthorization: 'Aguardando autorização',
       cloudStatusReceiving: 'Save recebido',
       cloudStatusEmpty: 'Sem save local',
       cloudStatusError: 'Erro',
+      cloudStatusConflict: 'Conflito entre dispositivos',
+      cloudStatusVersionMismatch: 'Versão incompatível',
+      cloudConflictMessage: 'O save na nuvem mudou em outro dispositivo. Reabra ou tente sincronizar novamente antes de enviar novo progresso.',
+      cloudVersionMismatchMessage: 'O save na nuvem usa a versão {cloud}, mas este jogo espera a versão {expected}. O save foi preservado e não será sobrescrito.',
       authServiceUnavailable: 'Serviço de conta indisponível no momento.',
       authPasswordsMismatch: 'As senhas não são iguais.',
       authAccountCreated: 'Conta criada. Você já está conectado.',
@@ -337,23 +343,21 @@
       cloudSyncing: 'Syncing',
       cloudSynced: 'Synced',
       cloudError: 'Error',
-      cloudReadyText: 'Blood Machine syncs automatically when launched through the portal.',
+      cloudReadyText: 'Integrated games sync automatically when launched through the portal.',
       cloudNeverSynced: 'Not synced in this session yet',
       cloudLastSync: 'Last sync: {time}',
       cloudBridgeWaiting: 'Waiting for a compatible game to be launched through the portal.',
       cloudBridgeConnected: 'Game connected to the portal.',
-      cloudSnapshotReceived: 'Save received from Blood Machine; uploading to the cloud.',
+      cloudSnapshotReceived: 'Save received from the game; uploading to the cloud.',
       cloudSyncNow: 'Sync again',
-      cloudOpenGameFirst: 'Launch Blood Machine through the portal before syncing.',
+      cloudOpenGameFirst: 'Launch an integrated game through the portal before syncing.',
       cloudBridgeAccountChanged: 'The account changed after the game was opened. Relaunch the game through the portal.',
       cloudChecking: 'Checking',
       cloudHandshaking: 'Connecting',
-      cloudAuthorizeGame: 'Authorize the connection in the game window.',
-      cloudAuthorizationRequired: 'Blood Machine recognized the portal, but needs your approval before sending the save.',
       cloudBridgeHandshake: 'Game opened; completing the secure portal connection.',
       cloudBridgeEmpty: 'Game connected. There is no persistent progress to upload yet.',
-      cloudDatabaseReady: 'Ready to sync. Waiting for the Blood Machine save.',
-      cloudSnapshotQueued: 'Save received from Blood Machine; finishing synchronization.',
+      cloudDatabaseReady: "Ready to sync. Waiting for the connected game's save.",
+      cloudSnapshotQueued: 'Save received from the game; finishing synchronization.',
       cloudBridgeError: 'The game connection failed.',
       cloudSectionTitle: 'Cloud Synchronization',
       cloudSearchPlaceholder: 'Search game...',
@@ -376,10 +380,13 @@
       cloudStatusChecking: 'Checking',
       cloudStatusWaiting: 'Waiting for game',
       cloudStatusConnected: 'Connected',
-      cloudStatusAuthorization: 'Waiting for authorization',
       cloudStatusReceiving: 'Save received',
       cloudStatusEmpty: 'No local save',
       cloudStatusError: 'Error',
+      cloudStatusConflict: 'Device conflict',
+      cloudStatusVersionMismatch: 'Incompatible version',
+      cloudConflictMessage: 'The cloud save changed on another device. Relaunch or sync again before uploading new progress.',
+      cloudVersionMismatchMessage: 'The cloud save uses version {cloud}, but this game expects version {expected}. The save was preserved and will not be overwritten.',
       authServiceUnavailable: 'Account service is currently unavailable.',
       authPasswordsMismatch: 'The passwords do not match.',
       authAccountCreated: 'Account created. You are already signed in.',
@@ -957,7 +964,7 @@
     }
   ];
 
-  let games = FALLBACK_GAMES.map(game => ({ ...game }));
+  let games = FALLBACK_GAMES.map(game => ({ ...game })).sort((a, b) => a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' }));
   let catalogSource = 'fallback';
   const reviewStats = new Map();
   let currentUserRole = 'user';
@@ -975,6 +982,7 @@
   const STORAGE_BRIDGE_PROTOCOL = 'zoinho-storage-v2';
   const STORAGE_BRIDGE_VERSION = 2;
   const STORAGE_BRIDGE_MAX_BYTES = 512 * 1024;
+  const PROFILE_AVATAR_BUCKET = 'profile-avatars';
   const CLOUD_WRITE_DELAY = 300;
   const BRIDGE_HANDSHAKE_TIMEOUT = 12000;
   const CLOUD_BOOT_FETCH_TIMEOUT = 10000;
@@ -1136,12 +1144,12 @@
   async function loadCatalogFromCloud({ rerender = true } = {}) {
     if (!supabaseClient) return false;
     try {
-      const { data, error } = await supabaseClient.from('games').select('*').eq('published', true).order('order_index', { ascending: true }).order('title', { ascending: true });
+      const { data, error } = await supabaseClient.from('games').select('*').eq('published', true).order('title', { ascending: true });
       if (error) throw error;
       if (!Array.isArray(data)) return false;
       // Consulta bem-sucedida = Supabase é a fonte de verdade, mesmo com zero jogos publicados.
       // O fallback só entra quando a tabela/API realmente está indisponível.
-      games = data.map(mapCatalogRow).sort((a,b) => a.order - b.order || a.title.localeCompare(b.title, currentLanguage, { sensitivity: 'base' }));
+      games = data.map(mapCatalogRow).sort((a,b) => a.title.localeCompare(b.title, currentLanguage, { sensitivity: 'base' }));
       catalogSource = 'cloud';
       resetCloudRegistryFromGames();
       if (authUser) void probeCloudAccess(authUser.id);
@@ -1243,47 +1251,6 @@
       record.lastEventAt = bridgeState.lastEventAt;
     }
     renderCloudState();
-  }
-
-  function emptyBridgeCache() {
-    return { version: 2, guest: {}, users: {} };
-  }
-
-  function readBridgeCache() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.bridgeCache) || 'null');
-      if (parsed && parsed.version === 2 && parsed.guest && parsed.users) return parsed;
-    } catch {}
-
-    const migrated = emptyBridgeCache();
-    try {
-      const legacy = JSON.parse(localStorage.getItem(STORAGE_KEYS.bridgeCacheLegacy) || '{}');
-      if (legacy && typeof legacy === 'object') migrated.guest = legacy;
-    } catch {}
-    return migrated;
-  }
-
-  function writeBridgeCache(cache) {
-    try {
-      localStorage.setItem(STORAGE_KEYS.bridgeCache, JSON.stringify(cache));
-      return true;
-    } catch (error) {
-      console.warn('[ZOINHO Bridge] Não foi possível gravar o cache local do portal.', error);
-      return false;
-    }
-  }
-
-  function getBridgeBucket(cache, userId = authUser?.id || null, create = false) {
-    if (!userId) return cache.guest;
-    if (!cache.users[userId] && create) cache.users[userId] = {};
-    return cache.users[userId] || {};
-  }
-
-  function writeCachedSnapshot(gameId, snapshot, userId = authUser?.id || null) {
-    const cache = readBridgeCache();
-    const bucket = getBridgeBucket(cache, userId, true);
-    bucket[gameId] = { snapshot, updatedAt: new Date().toISOString() };
-    return writeBridgeCache(cache);
   }
 
   function sanitizeBridgeSnapshot(gameId, snapshot) {
@@ -1390,18 +1357,38 @@
     record.error = null;
   }
 
+  function cloudVersionMismatchError(gameId, cloudVersion) {
+    const expected = storageBridgeGames.get(gameId)?.saveVersion || 1;
+    const template = getCopy().cloudVersionMismatchMessage;
+    const error = new Error(template.replace('{cloud}', String(cloudVersion ?? '?')).replace('{expected}', String(expected)));
+    error.code = 'cloud_save_version_mismatch';
+    error.cloudVersion = cloudVersion ?? null;
+    error.expectedVersion = expected;
+    return error;
+  }
+
+  function cloudConflictError() {
+    const error = new Error(getCopy().cloudConflictMessage);
+    error.code = 'cloud_save_conflict';
+    return error;
+  }
+
   async function fetchCloudSnapshot(gameId, expectedUserId = authUser?.id || null) {
-    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId) return { snapshot: null, row: null, error: null };
+    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId) return { snapshot: null, row: null, error: null, versionMismatch: null };
     const { data, error } = await supabaseClient
       .from('game_saves')
       .select('game_id, save_version, save_data, client_updated_at, updated_at, revision')
       .eq('user_id', expectedUserId)
       .eq('game_id', gameId)
       .limit(1);
-    if (authUser?.id !== expectedUserId) return { snapshot: null, row: null, error: new Error('Conta alterada durante a sincronização.') };
-    if (error) return { snapshot: null, row: null, error };
+    if (authUser?.id !== expectedUserId) return { snapshot: null, row: null, error: new Error('Conta alterada durante a sincronização.'), versionMismatch: null };
+    if (error) return { snapshot: null, row: null, error, versionMismatch: null };
     const row = Array.isArray(data) ? data[0] : null;
-    return { snapshot: cloudRowToSnapshot(gameId, row), row, error: null };
+    const expectedVersion = storageBridgeGames.get(gameId)?.saveVersion || 1;
+    if (row && Number(row.save_version) !== Number(expectedVersion)) {
+      return { snapshot: null, row, error: null, versionMismatch: { cloudVersion: Number(row.save_version), expectedVersion } };
+    }
+    return { snapshot: cloudRowToSnapshot(gameId, row), row, error: null, versionMismatch: null };
   }
 
   function snapshotsStorageEqual(a, b) {
@@ -1453,7 +1440,17 @@
     }
 
     const rowsByGame = new Map((Array.isArray(data) ? data : []).map(row => [row.game_id, row]));
-    for (const gameId of storageBridgeGames.keys()) applyCloudRowMetadata(gameId, rowsByGame.get(gameId) || null);
+    for (const [gameId, config] of storageBridgeGames) {
+      const row = rowsByGame.get(gameId) || null;
+      applyCloudRowMetadata(gameId, row);
+      if (row && Number(row.save_version) !== Number(config.saveVersion || 1)) {
+        const record = cloudGameRecords.get(gameId);
+        if (record) {
+          record.state = 'version-mismatch';
+          record.error = cloudVersionMismatchError(gameId, row.save_version);
+        }
+      }
+    }
     cloudState.state = 'ready';
     cloudState.error = null;
     console.info('[ZOINHO Cloud] Banco acessível para a conta autenticada.', { integratedGames: [...storageBridgeGames.keys()] });
@@ -1461,58 +1458,96 @@
     return true;
   }
 
-  async function upsertCloudSnapshot(gameId, snapshot, expectedUserId = authUser?.id || null) {
-    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId || !snapshotHasSave(snapshot)) return false;
-    const config = storageBridgeGames.get(gameId);
-    if (!config) return false;
+  function isMissingCloudWriteRpc(error) {
+    const code = String(error?.code || '');
+    const message = String(error?.message || '').toLowerCase();
+    return code === 'PGRST202' || code === '42883' || message.includes('could not find the function public.zoinho_write_game_save');
+  }
 
+  async function upsertCloudSnapshot(gameId, snapshot, expectedUserId = authUser?.id || null) {
+    if (!supabaseClient || !expectedUserId || authUser?.id !== expectedUserId || !snapshotHasSave(snapshot)) return { ok: false, status: 'invalid' };
+    const config = storageBridgeGames.get(gameId);
+    if (!config) return { ok: false, status: 'invalid' };
+    const record = cloudGameRecords.get(gameId);
+    if (record?.state === 'version-mismatch') return { ok: false, status: 'version-mismatch' };
+    if (record?.state === 'conflict') return { ok: false, status: 'conflict' };
+
+    const expectedRevision = record?.revision !== null && record?.revision !== undefined && Number.isFinite(Number(record.revision))
+      ? Number(record.revision)
+      : null;
     setCloudState('syncing', gameId);
     let lastError = null;
 
     for (let attempt = 1; attempt <= 3; attempt++) {
-      const { data, error } = await supabaseClient
-        .from('game_saves')
-        .upsert({
-          user_id: expectedUserId,
-          game_id: gameId,
-          save_version: config.saveVersion || 1,
-          save_data: snapshot.storage,
-          client_updated_at: snapshot.clientUpdatedAt || snapshot.portalReceivedAt || new Date().toISOString()
-        }, { onConflict: 'user_id,game_id' })
-        .select('updated_at, client_updated_at, revision, save_version')
-        .limit(1);
+      let row = null;
+      let error = null;
+      let status = null;
+      const rpcResult = await supabaseClient.rpc('zoinho_write_game_save', {
+        p_game_id: gameId,
+        p_save_version: config.saveVersion || 1,
+        p_save_data: snapshot.storage,
+        p_client_updated_at: snapshot.clientUpdatedAt || snapshot.portalReceivedAt || new Date().toISOString(),
+        p_expected_revision: expectedRevision
+      });
 
-      if (!error) {
-        const row = data?.[0] || null;
+      error = rpcResult.error;
+      row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+      status = row?.status || null;
+      if (error && isMissingCloudWriteRpc(error)) {
+        error = Object.assign(new Error('A proteção de Cloud Save v1.10 ainda não está instalada no banco. O save local foi preservado; execute supabase-platform-v1.10-hardening.sql antes de publicar este portal.'), {
+          code: 'cloud_write_rpc_missing',
+          cause: rpcResult.error
+        });
+      }
+
+      if (!error && (status === 'inserted' || status === 'updated')) {
         const syncedAt = row?.updated_at || new Date().toISOString();
         applyCloudRowMetadata(gameId, {
           updated_at: syncedAt,
           client_updated_at: row?.client_updated_at || snapshot.clientUpdatedAt || snapshot.portalReceivedAt || syncedAt,
-          revision: row?.revision ?? null,
+          revision: row?.revision ?? expectedRevision ?? 1,
           save_version: row?.save_version ?? config.saveVersion ?? 1
         });
         setCloudState('synced', gameId, null, syncedAt);
-        console.info('[ZOINHO Cloud] Save gravado:', gameId, { revision: row?.revision, updatedAt: syncedAt });
-        return true;
+        console.info('[ZOINHO Cloud] Save gravado:', gameId, { revision: row?.revision, updatedAt: syncedAt, status });
+        return { ok: true, status, row };
       }
 
-      lastError = error;
-      console.warn(`[ZOINHO Cloud] Falha ao salvar ${gameId} (tentativa ${attempt}/3)`, error);
-      const status = Number(error?.status || 0);
-      const message = String(error?.message || '').toLowerCase();
-      const nonRetryable = status === 400 || status === 401 || status === 403 ||
+      if (!error && status === 'conflict') {
+        applyCloudRowMetadata(gameId, row);
+        const conflict = cloudConflictError();
+        setCloudState('conflict', gameId, conflict, row?.updated_at || null);
+        console.warn('[ZOINHO Cloud] Conflito de revisão detectado; save local não sobrescreveu a nuvem.', { gameId, expectedRevision, cloudRevision: row?.revision });
+        return { ok: false, status: 'conflict', row, error: conflict };
+      }
+
+      if (!error && status === 'version_mismatch') {
+        applyCloudRowMetadata(gameId, row);
+        const mismatch = cloudVersionMismatchError(gameId, row?.save_version);
+        setCloudState('version-mismatch', gameId, mismatch, row?.updated_at || null);
+        return { ok: false, status: 'version-mismatch', row, error: mismatch };
+      }
+
+      lastError = error || new Error(`Resposta inesperada da escrita de Cloud Save: ${status || 'sem status'}.`);
+      console.warn(`[ZOINHO Cloud] Falha ao salvar ${gameId} (tentativa ${attempt}/3)`, lastError);
+      const httpStatus = Number(lastError?.status || 0);
+      const message = String(lastError?.message || '').toLowerCase();
+      const nonRetryable = lastError?.code === 'cloud_write_rpc_missing' ||
+        httpStatus === 400 || httpStatus === 401 || httpStatus === 403 ||
         message.includes('row-level security') || message.includes('permission') ||
-        message.includes('constraint') || message.includes('violates');
+        message.includes('constraint') || message.includes('violates') || message.includes('version_mismatch');
       if (nonRetryable || attempt === 3) break;
       await new Promise(resolve => setTimeout(resolve, 250 * attempt));
     }
 
     setCloudState('error', gameId, lastError || new Error('Falha desconhecida ao gravar o save.'));
-    return false;
+    return { ok: false, status: 'error', error: lastError };
   }
 
   function scheduleCloudSnapshot(gameId, snapshot) {
     if (!authUser || !supabaseClient || !snapshotHasSave(snapshot)) return false;
+    const record = cloudGameRecords.get(gameId);
+    if (record?.state === 'conflict' || record?.state === 'version-mismatch') return false;
     const userId = authUser.id;
     cloudWritePending.set(gameId, { userId, snapshot });
     clearTimeout(cloudWriteTimers.get(gameId));
@@ -1591,6 +1626,25 @@
         nonce: active.nonce,
         retryable: true,
         message: 'Não foi possível acessar seu progresso na nuvem agora.'
+      });
+      return false;
+    }
+
+    if (result.versionMismatch) {
+      active.initialCloudSnapshot = null;
+      active.initialCloudRow = result.row || null;
+      if (result.row) applyCloudRowMetadata(gameId, result.row);
+      const mismatch = cloudVersionMismatchError(gameId, result.versionMismatch.cloudVersion);
+      setCloudState('version-mismatch', gameId, mismatch, result.row?.updated_at || null);
+      active.bootSyncInProgress = false;
+      postToActive(active, {
+        protocol: STORAGE_BRIDGE_PROTOCOL,
+        bridgeVersion: STORAGE_BRIDGE_VERSION,
+        type: 'sync-error',
+        gameId,
+        nonce: active.nonce,
+        retryable: false,
+        message: mismatch.message
       });
       return false;
     }
@@ -1726,13 +1780,9 @@
       const active = activeBridgeWindows.get(message.gameId);
       if (!active || active.source !== source) return;
       if (message.code === 'untrusted-portal-origin') {
-        setBridgeState('authorization-required', message.gameId, null, message.detail || message.code, message.observedPortalOrigin || null);
-      } else if (message.code === 'portal-origin-approved') {
-        setBridgeState('handshaking', message.gameId, null, 'portal-origin-approved', message.observedPortalOrigin || null);
-      } else if (message.code === 'portal-authorization-denied') {
-        setBridgeState('error', message.gameId, new Error('A conexão foi recusada na janela do jogo.'), message.code, message.observedPortalOrigin || null);
-      } else if (message.code === 'authorization-store-failed') {
-        setBridgeState('error', message.gameId, new Error('O jogo não conseguiu guardar a autorização do portal.'), message.code, message.observedPortalOrigin || null);
+        setBridgeState('error', message.gameId, new Error('A origem do portal não pôde ser validada pelo jogo.'), message.detail || message.code, message.observedPortalOrigin || null);
+      } else if (message.code === 'portal-authorization-denied' || message.code === 'authorization-store-failed') {
+        setBridgeState('error', message.gameId, new Error('A conexão segura com o jogo falhou.'), message.code, message.observedPortalOrigin || null);
       }
       return;
     }
@@ -1794,7 +1844,6 @@
       }
 
       const userId = authUser?.id || null;
-      writeCachedSnapshot(message.gameId, snapshot, userId);
       setBridgeState(snapshotHasSave(snapshot) ? 'snapshot' : 'empty', message.gameId, null, snapshotHasSave(snapshot) ? 'snapshot-received' : 'no-save-present');
 
       if (message.bootSync) {
@@ -1858,17 +1907,23 @@
           nonce: active.nonce,
           stage: 'saving-cloud'
         });
-        const saved = await upsertCloudSnapshot(message.gameId, snapshot, userId);
+        const saveResult = await upsertCloudSnapshot(message.gameId, snapshot, userId);
         active.bootSyncInProgress = false;
-        if (!saved) {
+        if (!saveResult.ok) {
+          const conflict = saveResult.status === 'conflict';
+          const versionMismatch = saveResult.status === 'version-mismatch';
           postToActive(active, {
             protocol: STORAGE_BRIDGE_PROTOCOL,
             bridgeVersion: STORAGE_BRIDGE_VERSION,
             type: 'sync-error',
             gameId: message.gameId,
             nonce: active.nonce,
-            retryable: true,
-            message: 'O save local está protegido, mas não foi possível enviá-lo para a nuvem agora.'
+            retryable: !versionMismatch,
+            message: conflict
+              ? getCopy().cloudConflictMessage
+              : versionMismatch
+                ? (saveResult.error?.message || getCopy().cloudVersionMismatchMessage.replace('{cloud}', '?').replace('{expected}', String(config.saveVersion || 1)))
+                : 'O save local está protegido, mas não foi possível enviá-lo para a nuvem agora.'
           });
           return;
         }
@@ -1893,14 +1948,14 @@
       }
 
       // Durante a partida, autosaves continuam assíncronos para não bloquear gameplay.
-      if (authUser && snapshotHasSave(snapshot)) scheduleCloudSnapshot(message.gameId, snapshot);
+      const queuedForCloud = Boolean(authUser && snapshotHasSave(snapshot) && scheduleCloudSnapshot(message.gameId, snapshot));
       postToActive(active, {
         protocol: STORAGE_BRIDGE_PROTOCOL,
         bridgeVersion: STORAGE_BRIDGE_VERSION,
         type: 'ack',
         gameId: message.gameId,
         nonce: active.nonce,
-        cloudSaved: Boolean(authUser && snapshotHasSave(snapshot))
+        cloudSaved: queuedForCloud
       });
       console.info('[ZOINHO Bridge] Save recebido:', message.gameId, snapshot.storage);
       return;
@@ -1926,8 +1981,8 @@
       return false;
     }
     if (!active.authorized) {
-      if (!silent) showToast(getCopy().cloudAuthorizeGame);
-      setBridgeState('authorization-required', gameId, null, 'manual-sync-before-authorization');
+      if (!silent) showToast(getCopy().cloudBridgeHandshake);
+      setBridgeState('handshaking', gameId, null, 'manual-sync-before-handshake');
       return false;
     }
     if (!postToActive(active, {
@@ -2031,6 +2086,8 @@
   const cloudInfoStatusValue = document.getElementById('cloudInfoStatusValue');
   const cloudInfoLastSyncValue = document.getElementById('cloudInfoLastSyncValue');
   const cloudInfoClientUpdateValue = document.getElementById('cloudInfoClientUpdateValue');
+  const cloudInfoRevisionValue = document.getElementById('cloudInfoRevisionValue');
+  const cloudInfoSaveVersionValue = document.getElementById('cloudInfoSaveVersionValue');
   const cloudInfoErrorRow = document.getElementById('cloudInfoErrorRow');
   const cloudInfoErrorValue = document.getElementById('cloudInfoErrorValue');
 
@@ -2094,6 +2151,7 @@
       nickname: String(row.nickname || '').trim(),
       displayName: String(row.nickname || '').trim(),
       avatarDataUrl: typeof row.avatar_data_url === 'string' ? row.avatar_data_url : '',
+      avatarPath: typeof row.avatar_path === 'string' ? row.avatar_path : '',
       nicknameChangedAt: row.nickname_changed_at || null,
       updatedAt: row.updated_at || null
     };
@@ -2122,9 +2180,26 @@
     return currentDisplayName().charAt(0).toUpperCase() || 'Z';
   }
 
+  function publicAvatarUrl(path) {
+    const cleanPath = String(path || '').trim();
+    if (!cleanPath || !supabaseClient?.storage) return '';
+    try {
+      return supabaseClient.storage.from(PROFILE_AVATAR_BUCKET).getPublicUrl(cleanPath).data?.publicUrl || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function resolveAvatarImage(profile = {}) {
+    const path = String(profile.avatarPath || profile.avatar_path || '').trim();
+    if (path) return publicAvatarUrl(path);
+    const legacy = String(profile.avatarDataUrl || profile.avatar_data_url || '');
+    return legacy.startsWith('data:image/') ? legacy : '';
+  }
+
   function paintAvatar(element, profile = getAccountProfile()) {
     if (!element) return;
-    const image = typeof profile.avatarDataUrl === 'string' && profile.avatarDataUrl.startsWith('data:image/') ? profile.avatarDataUrl : '';
+    const image = resolveAvatarImage(profile);
     element.classList.toggle('has-photo', Boolean(image));
     element.style.backgroundImage = image ? `url(${JSON.stringify(image)})` : '';
     element.textContent = image ? '' : accountInitial();
@@ -2321,7 +2396,7 @@
     renderNicknameCooldown();
     const { data, error } = await supabaseClient
       .from('user_profiles')
-      .select('user_id, nickname, avatar_data_url, nickname_changed_at, updated_at')
+      .select('user_id, nickname, avatar_path, avatar_data_url, nickname_changed_at, updated_at')
       .eq('user_id', expectedUserId)
       .limit(1);
     if (authUser?.id !== expectedUserId) { profileLoading = false; return null; }
@@ -2332,7 +2407,11 @@
       renderNicknameCooldown();
       return null;
     }
-    const row = Array.isArray(data) ? data[0] : null;
+    let row = Array.isArray(data) ? data[0] : null;
+    if (row?.avatar_data_url && !row?.avatar_path) {
+      row = await migrateLegacyAvatarProfileRow(row, expectedUserId);
+    }
+    if (authUser?.id !== expectedUserId) { profileLoading = false; return null; }
     profileLoading = false;
     cloudProfileUserId = expectedUserId;
     if (row) {
@@ -2341,6 +2420,7 @@
         displayName: cloudProfile.nickname,
         nickname: cloudProfile.nickname,
         avatarDataUrl: cloudProfile.avatarDataUrl,
+        avatarPath: cloudProfile.avatarPath,
         nicknameChangedAt: cloudProfile.nicknameChangedAt
       });
     } else {
@@ -2353,6 +2433,7 @@
         nickname: cachedName,
         displayName: cachedName,
         avatarDataUrl: cached.avatarDataUrl || '',
+        avatarPath: cached.avatarPath || '',
         nicknameChangedAt: null,
         updatedAt: null
       };
@@ -2454,7 +2535,6 @@
     const state = bridgeGameRecords.get(gameId)?.state || 'waiting';
     if (state === 'handshaking') return copy.cloudHandshaking;
     if (state === 'connected') return copy.cloudStatusConnected;
-    if (state === 'authorization-required') return copy.cloudStatusAuthorization;
     if (state === 'snapshot') return copy.cloudStatusReceiving;
     if (state === 'empty') return copy.cloudStatusEmpty;
     if (state === 'error' || state === 'account-changed') return copy.cloudStatusError;
@@ -2463,7 +2543,14 @@
 
   function isGameCloudHealthy(gameId) {
     const record = cloudGameRecords.get(gameId);
-    return Boolean(record?.hasCloudSave && record.state !== 'error');
+    return Boolean(record?.hasCloudSave && !['error', 'conflict', 'version-mismatch'].includes(record.state));
+  }
+
+  function cloudRecordStatusLabel(record) {
+    const copy = getCopy();
+    if (record?.state === 'conflict') return copy.cloudStatusConflict;
+    if (record?.state === 'version-mismatch') return copy.cloudStatusVersionMismatch;
+    return record?.hasCloudSave && record?.state !== 'error' ? copy.cloudInfoSynced : copy.cloudInfoNotSynced;
   }
 
   function renderCloudInfo() {
@@ -2479,10 +2566,12 @@
     const errorText = error?.message || error?.details || bridgeErrorDetail || '';
 
     cloudInfoGameName.textContent = config.title || cloudInfoGameId;
-    cloudInfoStatusValue.textContent = healthy ? copy.cloudInfoSynced : copy.cloudInfoNotSynced;
+    cloudInfoStatusValue.textContent = cloudRecordStatusLabel(cloud);
     cloudInfoStatusValue.dataset.state = healthy ? 'synced' : 'unsynced';
     cloudInfoLastSyncValue.textContent = formatCloudTimestamp(cloud.lastSyncAt);
     cloudInfoClientUpdateValue.textContent = formatCloudTimestamp(cloud.clientUpdatedAt);
+    if (cloudInfoRevisionValue) cloudInfoRevisionValue.textContent = cloud.revision == null ? '—' : String(cloud.revision);
+    if (cloudInfoSaveVersionValue) cloudInfoSaveVersionValue.textContent = `${cloud.saveVersion ?? config.saveVersion ?? 1} / ${config.saveVersion ?? 1}`;
     cloudInfoErrorValue.textContent = errorText || copy.cloudInfoNoError;
     cloudInfoErrorRow.hidden = !errorText;
   }
@@ -2808,6 +2897,58 @@
     return result;
   }
 
+  async function uploadProfileAvatarDataUrl(dataUrl, userId) {
+    if (!supabaseClient?.storage || !userId || !String(dataUrl || '').startsWith('data:image/')) throw new Error('avatar-upload-invalid');
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const ext = blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg';
+    const token = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const path = `${userId}/${Date.now()}-${token}.${ext}`;
+    const { error } = await supabaseClient.storage.from(PROFILE_AVATAR_BUCKET).upload(path, blob, {
+      cacheControl: '31536000',
+      upsert: false,
+      contentType: blob.type || 'image/jpeg'
+    });
+    if (error) throw error;
+    return path;
+  }
+
+  async function migrateLegacyAvatarProfileRow(row, userId) {
+    if (!row || !userId || row.avatar_path || !String(row.avatar_data_url || '').startsWith('data:image/')) return row;
+    let uploadedPath = '';
+    try {
+      uploadedPath = await uploadProfileAvatarDataUrl(row.avatar_data_url, userId);
+      const { data, error } = await supabaseClient
+        .from('user_profiles')
+        .update({ avatar_path: uploadedPath, avatar_data_url: '' })
+        .eq('user_id', userId)
+        .select('user_id, nickname, avatar_path, avatar_data_url, nickname_changed_at, updated_at')
+        .limit(1);
+      if (error) throw error;
+      const migrated = Array.isArray(data) ? data[0] : null;
+      if (!migrated) throw new Error('avatar-migration-empty-result');
+      console.info('[ZOINHO Profile] Avatar legado migrado para Storage.');
+      return migrated;
+    } catch (error) {
+      if (uploadedPath) await removeProfileAvatarPath(uploadedPath, userId);
+      console.warn('[ZOINHO Profile] Migração automática do avatar legado falhou; mantendo Data URL como fallback.', error);
+      return row;
+    }
+  }
+
+  async function removeProfileAvatarPath(path, userId = authUser?.id || null) {
+    const clean = String(path || '').trim();
+    if (!supabaseClient?.storage || !userId || !clean.startsWith(`${userId}/`)) return false;
+    try {
+      const { error } = await supabaseClient.storage.from(PROFILE_AVATAR_BUCKET).remove([clean]);
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn('[ZOINHO Profile] Não foi possível remover o avatar antigo do Storage.', error);
+      return false;
+    }
+  }
+
   async function handleProfilePhotoChange() {
     const file = profilePhotoInput?.files?.[0];
     if (!file) return;
@@ -2840,23 +2981,39 @@
       return false;
     }
 
-    const avatarDataUrl = pendingProfileAvatar === undefined ? (previous.avatarDataUrl || '') : (pendingProfileAvatar || '');
+    const previousAvatarPath = String(previous.avatarPath || '');
+    let avatarPath = previousAvatarPath;
+    let avatarDataUrl = previous.avatarDataUrl || '';
+    let uploadedAvatarPath = '';
     profileSaving = true;
     if (saveLocalProfileButton) saveLocalProfileButton.disabled = true;
     renderNicknameCooldown();
 
     try {
+      if (pendingProfileAvatar !== undefined) {
+        if (pendingProfileAvatar) {
+          uploadedAvatarPath = await uploadProfileAvatarDataUrl(pendingProfileAvatar, authUser.id);
+          avatarPath = uploadedAvatarPath;
+          avatarDataUrl = '';
+        } else {
+          avatarPath = '';
+          avatarDataUrl = '';
+        }
+      }
+
       const { data, error } = await supabaseClient
         .from('user_profiles')
         .upsert({
           user_id: authUser.id,
           nickname: name,
+          avatar_path: avatarPath,
           avatar_data_url: avatarDataUrl
         }, { onConflict: 'user_id' })
-        .select('user_id, nickname, avatar_data_url, nickname_changed_at, updated_at')
+        .select('user_id, nickname, avatar_path, avatar_data_url, nickname_changed_at, updated_at')
         .limit(1);
 
       if (error) {
+        if (uploadedAvatarPath) await removeProfileAvatarPath(uploadedAvatarPath, authUser.id);
         const message = String(error.message || '').toLowerCase();
         if (error.code === '23505' || message.includes('nickname_key') || message.includes('duplicate')) {
           showToast(copy.profileNicknameTaken);
@@ -2874,17 +3031,24 @@
 
       const row = Array.isArray(data) ? data[0] : null;
       cloudProfileUserId = authUser.id;
-      cloudProfile = mapCloudProfile(row || { nickname: name, avatar_data_url: avatarDataUrl, nickname_changed_at: previous.nicknameChangedAt });
+      cloudProfile = mapCloudProfile(row || { nickname: name, avatar_path: avatarPath, avatar_data_url: avatarDataUrl, nickname_changed_at: previous.nicknameChangedAt });
       saveLocalProfile({
         displayName: cloudProfile.nickname,
         nickname: cloudProfile.nickname,
         avatarDataUrl: cloudProfile.avatarDataUrl,
+        avatarPath: cloudProfile.avatarPath,
         nicknameChangedAt: cloudProfile.nicknameChangedAt
       });
       pendingProfileAvatar = undefined;
+      if (previousAvatarPath && previousAvatarPath !== cloudProfile.avatarPath) void removeProfileAvatarPath(previousAvatarPath, authUser.id);
       renderAccount();
       showToast(copy.profileSaved);
       return true;
+    } catch (error) {
+      if (uploadedAvatarPath) await removeProfileAvatarPath(uploadedAvatarPath, authUser.id);
+      console.warn('[ZOINHO Profile] Falha ao salvar/upload do perfil.', error);
+      showToast(copy.profileSaveError);
+      return false;
     } finally {
       profileSaving = false;
       renderNicknameCooldown();
@@ -3017,7 +3181,7 @@
     const copy = getCopy();
     if (!data) return;
     const nickname = String(data.nickname || 'Jogador').trim() || 'Jogador';
-    const avatar = String(data.avatar_data_url || '');
+    const avatar = resolveAvatarImage({ avatar_path: data.avatar_path, avatar_data_url: data.avatar_data_url });
     const titles = Array.isArray(data.titles) ? data.titles : [];
     const played = Array.isArray(data.games_played) ? data.games_played : [];
     const reviews = Array.isArray(data.reviews) ? data.reviews : [];
@@ -3026,7 +3190,7 @@
     if (titleEl) titleEl.textContent = nickname;
     if (publicProfileDisplayName) publicProfileDisplayName.textContent = nickname;
     if (publicProfileAvatar) {
-      const hasPhoto = avatar.startsWith('data:image/');
+      const hasPhoto = Boolean(avatar);
       publicProfileAvatar.classList.toggle('has-photo', hasPhoto);
       publicProfileAvatar.style.backgroundImage = hasPhoto ? `url(${JSON.stringify(avatar)})` : '';
       publicProfileAvatar.textContent = hasPhoto ? '' : ([...nickname][0]?.toUpperCase() || 'J');
@@ -3155,11 +3319,11 @@
     if (avgCount) avgCount.textContent = stats.count ? copy.ratingCount(stats.count) : copy.ratingEmpty;
   }
 
-  function reviewAvatarMarkup(nick, avatar) {
+  function reviewAvatarMarkup(nick, avatarDataUrl, avatarPath = '') {
     const safeNick = String(nick || 'Jogador').trim() || 'Jogador';
-    const image = String(avatar || '');
+    const image = resolveAvatarImage({ avatarDataUrl, avatarPath });
     const initial = [...safeNick][0]?.toUpperCase() || 'J';
-    const avatarStyle = image.startsWith('data:image/') ? ` style="background-image:url('${escapeAttr(image)}')"` : '';
+    const avatarStyle = image ? ` style="background-image:url('${escapeAttr(image)}')"` : '';
     return { nick: safeNick, avatarStyle, avatarText: avatarStyle ? '' : escapeHtml(initial) };
   }
 
@@ -3175,7 +3339,7 @@
     const copy = communityCopy();
     const publicOwn = publicRows.find(row => row.user_id === authUser.id || row.id === own.id) || null;
     const profile = getAccountProfile();
-    const avatarInfo = reviewAvatarMarkup(publicOwn?.nickname || profile?.nickname || fallbackDisplayName(), publicOwn?.avatar_data_url || profile?.avatarDataUrl || '');
+    const avatarInfo = reviewAvatarMarkup(publicOwn?.nickname || profile?.nickname || fallbackDisplayName(), publicOwn?.avatar_data_url || profile?.avatarDataUrl || '', publicOwn?.avatar_path || profile?.avatarPath || '');
     const equippedTitles = Array.isArray(publicOwn?.equipped_titles) ? publicOwn.equipped_titles : currentEquippedTitles();
     const edited = own.updated_at && own.created_at && Math.abs(new Date(own.updated_at) - new Date(own.created_at)) > 1500 ? ` · ${copy.edited}` : '';
     const hiddenNotice = own.is_hidden ? `<p class="review-moderation-notice own-review-moderation">${escapeHtml(copy.reviewHidden)}</p>` : '';
@@ -3196,7 +3360,7 @@
       return;
     }
     root.innerHTML = visibleRows.map(row => {
-      const avatarInfo = reviewAvatarMarkup(row.nickname, row.avatar_data_url);
+      const avatarInfo = reviewAvatarMarkup(row.nickname, row.avatar_data_url, row.avatar_path);
       const edited = row.updated_at && row.created_at && Math.abs(new Date(row.updated_at) - new Date(row.created_at)) > 1500 ? ` · ${copy.edited}` : '';
       const profileAria = getCopy().publicProfileOpen.replace('{name}', avatarInfo.nick);
       const titles = Array.isArray(row.equipped_titles) ? row.equipped_titles : [];
@@ -3360,7 +3524,7 @@
 
   async function loadAdminGames() {
     if (!supabaseClient || currentUserRole !== 'admin') { adminGamesCache = []; renderAdminGames(); return []; }
-    const { data, error } = await supabaseClient.from('games').select('*').order('order_index',{ascending:true}).order('title',{ascending:true});
+    const { data, error } = await supabaseClient.from('games').select('*').order('title',{ascending:true});
     if (error) { console.warn('[ZOINHO Admin] Falha ao carregar jogos.',error); return []; }
     adminGamesCache = data || [];
     renderAdminGames();
@@ -3430,7 +3594,7 @@
   async function adminClearReviewComment(id){if(!['admin','moderator'].includes(currentUserRole)||!confirm('Remover somente o comentário e manter a nota desta avaliação?'))return;const {error}=await supabaseClient.from('game_reviews').update({comment:''}).eq('id',id);if(error)return showToast(error.message);await loadAdminReviews();if(reviewDialogGameId)await loadReviewDialog(reviewDialogGameId);showToast('Comentário removido.');}
   async function adminDeleteReview(id){if(!['admin','moderator'].includes(currentUserRole)||!confirm('Excluir definitivamente esta avaliação?'))return;const {error}=await supabaseClient.from('game_reviews').delete().eq('id',id);if(error)return showToast(error.message);await loadAdminReviews();await loadReviewStats({rerender:true});renderAdminOverview()}
 
-  function createCard(game) {
+  function createCard(game, displayOrder = 0) {
     const copy = getCopy();
     const tags = game.tags?.[currentLanguage] || game.tags?.['pt-BR'] || [];
     const platform = game.platform?.[currentLanguage] || 'PC';
@@ -3439,7 +3603,7 @@
       <article class="game-card" data-game="${escapeAttr(game.id)}" data-categories="${escapeAttr((game.categories || []).join(' '))}">
         <div class="game-art">
           <img class="cover-image" src="${escapeAttr(game.image || '')}" alt="Capa de ${escapeAttr(game.title)}" loading="lazy" />
-          <div class="art-topline"><span class="game-number">${String(game.order || 0).padStart(2, '0')}</span><span>${escapeHtml(game.kicker || 'JOGO')}</span></div>
+          <div class="art-topline"><span class="game-number">${String(displayOrder || 0).padStart(2, '0')}</span><span>${escapeHtml(game.kicker || 'JOGO')}</span></div>
           <span class="art-title">${escapeHtml(game.title)}</span>
         </div>
         <div class="game-content">
@@ -3462,7 +3626,7 @@
   }
 
   function renderCatalog() {
-    gamesGrid.innerHTML = games.map(createCard).join('');
+    gamesGrid.innerHTML = games.map((game, index) => createCard(game, index + 1)).join('');
     bindGameLaunchers();
     document.querySelectorAll('.game-details').forEach(button => {
       button.addEventListener('click', () => openGameDetails(button.dataset.gameId));

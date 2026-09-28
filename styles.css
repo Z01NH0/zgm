@@ -979,3 +979,6 @@ html[data-theme="light"] .icon-moon { display: none; }
 @media(max-width:720px){.profile-title-list{grid-template-columns:1fr}.public-profile-panel{width:100vw;height:100vh;max-height:none;border-radius:0}.public-profile-identity{grid-template-columns:76px 1fr}.public-profile-avatar{width:76px;height:76px;border-radius:17px;font-size:1.4rem}.public-game-list{grid-template-columns:1fr}.public-profile-header{top:0}.public-profile-review-head{flex-direction:column}.public-profile-stats>span{min-width:96px}}
 @media(max-width:480px){.profile-titles-head{flex-direction:column}.public-profile-identity{grid-template-columns:1fr;text-align:center}.public-profile-avatar{margin:auto}.public-profile-titles,.public-profile-stats{justify-content:center}.public-game-card{grid-template-columns:72px 1fr}.public-game-card img,.public-game-placeholder{width:72px;height:56px}}
 .account-name-line{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.account-name-line h3{margin:0}.account-equipped-titles{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}.user-title-badge.is-account-title{font-size:.4375rem;padding:2px 6px}
+
+/* v1.10 — notas auxiliares do formulário Admin */
+.admin-game-form-grid label>small{display:block;margin-top:5px;color:var(--text-faint);font-size:.5rem;line-height:1.4}
