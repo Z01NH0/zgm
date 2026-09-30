@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=platform-1.11.1" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.11.2" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -587,6 +587,7 @@
         <span class="game-shell-status" id="gameShellCloud" data-state="local">SAVE LOCAL</span>
         <span class="game-shell-status" id="gameShellAudio" data-state="enabled">AUTOPLAY PERMITIDO</span>
       </div>
+      <button class="game-shell-close-bar" id="gameShellCloseBar" type="button" data-i18n="shellCloseBar" data-i18n-title="shellCloseBar" aria-label="Fechar barra" title="Fechar barra">Fechar barra</button>
       <div class="game-shell-actions">
         <button class="game-shell-action" id="gameShellNewTab" type="button" data-i18n-title="shellNewTab" title="Abrir em nova aba">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-7 7"/><path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg><span data-i18n="shellNewTab">Abrir em nova aba</span>
@@ -615,7 +616,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=platform-1.11.1"></script>
-  <script src="app.js?v=platform-1.11.1"></script>
+  <script src="supabase-config.js?v=platform-1.11.2"></script>
+  <script src="app.js?v=platform-1.11.2"></script>
 </body>
 </html>

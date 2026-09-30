@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.11.1';
+  const ZOINHO_CLOUD_BUILD = '1.11.2';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -256,6 +256,7 @@
       shellAutoHideBar: 'Ocultar barra durante a partida',
       shellAutoHideBarSub: 'Esconde a barra superior após alguns segundos e mostra novamente ao mover o mouse para o topo.',
       shellBack: 'Voltar ao portal',
+      shellCloseBar: 'Fechar barra',
       shellNewTab: 'Abrir em nova aba',
       shellFullscreen: 'Tela cheia',
       shellExitFullscreen: 'Sair da tela cheia',
@@ -516,6 +517,7 @@
       shellAutoHideBar: 'Hide bar while playing',
       shellAutoHideBarSub: 'Hides the top bar after a few seconds and reveals it again when the pointer reaches the top.',
       shellBack: 'Back to portal',
+      shellCloseBar: 'Hide bar',
       shellNewTab: 'Open in new tab',
       shellFullscreen: 'Fullscreen',
       shellExitFullscreen: 'Exit fullscreen',
@@ -2107,6 +2109,7 @@
   const gameShellBridgeNewTab = document.getElementById('gameShellBridgeNewTab');
   const gameShellContinueLocal = document.getElementById('gameShellContinueLocal');
   const gameShellBack = document.getElementById('gameShellBack');
+  const gameShellCloseBar = document.getElementById('gameShellCloseBar');
   const gameShellNewTab = document.getElementById('gameShellNewTab');
   const gameShellFullscreen = document.getElementById('gameShellFullscreen');
   const gameShellEnabledInput = document.getElementById('gameShellEnabled');
@@ -3298,13 +3301,25 @@
   }
 
   function showGameShellBarTemporarily() {
-    if (!gameShell || !currentGameShellAutoHideBar || gameShell.hidden) return;
+    if (!gameShell || gameShell.hidden) return;
+    const wasManualHidden = gameShell.classList.contains('game-shell-bar-manual-hidden');
+    if (wasManualHidden) gameShell.classList.remove('game-shell-bar-manual-hidden');
+    if (!currentGameShellAutoHideBar && !wasManualHidden) return;
     gameShell.classList.add('game-shell-bar-visible');
     clearTimeout(shellHideTimer);
+    if (!currentGameShellAutoHideBar) return;
     shellHideTimer = setTimeout(() => {
       const barHovered = gameShell?.querySelector('.game-shell-bar')?.matches(':hover');
       if (!barHovered) gameShell.classList.remove('game-shell-bar-visible');
     }, 2600);
+  }
+
+  function hideGameShellBarManually() {
+    if (!gameShell || gameShell.hidden) return;
+    clearTimeout(shellHideTimer);
+    gameShell.classList.remove('game-shell-bar-visible');
+    gameShell.classList.add('game-shell-bar-manual-hidden');
+    try { gameShellCloseBar?.blur(); } catch {}
   }
 
   function setShellLoading(visible, title = null, detail = null) {
@@ -3327,7 +3342,7 @@
     gameShell.setAttribute('aria-hidden', 'false');
     gameShell.classList.toggle('game-shell-auto-hide', currentGameShellAutoHideBar);
     gameShell.classList.toggle('game-shell-bar-visible', !currentGameShellAutoHideBar);
-    gameShell.classList.remove('game-shell-playing', 'game-shell-load-slow');
+    gameShell.classList.remove('game-shell-playing', 'game-shell-load-slow', 'game-shell-bar-manual-hidden');
     if (gameShellBridgeWarning) gameShellBridgeWarning.hidden = true;
     if (gameShellTitle) gameShellTitle.textContent = game.title;
     if (gameShellKicker) gameShellKicker.textContent = game.kicker || 'ZOINHO GAME';
@@ -3400,7 +3415,7 @@
     if (gameShell) {
       gameShell.hidden = true;
       gameShell.setAttribute('aria-hidden', 'true');
-      gameShell.classList.remove('game-shell-playing', 'game-shell-load-slow', 'game-shell-bar-visible');
+      gameShell.classList.remove('game-shell-playing', 'game-shell-load-slow', 'game-shell-bar-visible', 'game-shell-bar-manual-hidden');
     }
     document.body.classList.remove('game-shell-open');
     updateGameShellStatus();
@@ -3455,13 +3470,14 @@
     if (currentGameShellAutoHideBar) showGameShellBarTemporarily();
   });
   gameShellBack?.addEventListener('click', closeGameShell);
+  gameShellCloseBar?.addEventListener('click', hideGameShellBarManually);
   gameShellNewTab?.addEventListener('click', openShellGameInNewTab);
   gameShellBridgeNewTab?.addEventListener('click', openShellGameInNewTab);
   gameShellContinueLocal?.addEventListener('click', continueShellLocally);
   gameShellFullscreen?.addEventListener('click', toggleShellFullscreen);
   gameShell?.addEventListener('mousemove', event => {
-    if (!currentGameShellAutoHideBar) return;
-    if (event.clientY <= 72) showGameShellBarTemporarily();
+    if (event.clientY > 72) return;
+    if (currentGameShellAutoHideBar || gameShell.classList.contains('game-shell-bar-manual-hidden')) showGameShellBarTemporarily();
   });
   gameShell?.addEventListener('focusin', showGameShellBarTemporarily);
   document.addEventListener('fullscreenchange', updateGameShellStatus);
