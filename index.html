@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=platform-1.10.0" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.11.0" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -389,6 +389,17 @@
         </select>
       </div>
 
+
+      <div class="setting-group game-shell-settings-group">
+        <div class="setting-copy"><h3 data-i18n="shellSettingsTitle">Game Shell</h3><p data-i18n="shellSettingsText">Controle como os jogos abrem pelo portal.</p></div>
+        <div class="shell-setting-list">
+          <label class="shell-setting-card"><span><strong data-i18n="shellEnabled">Abrir jogos no Game Shell</strong><small data-i18n="shellEnabledSub">Mantém o portal ativo e executa o jogo dentro da interface ZOINHO.</small></span><input id="gameShellEnabled" type="checkbox" checked /><i aria-hidden="true"></i></label>
+          <label class="shell-setting-card"><span><strong data-i18n="shellAutoFullscreen">Tela cheia automática</strong><small data-i18n="shellAutoFullscreenSub">Tenta entrar em tela cheia no mesmo clique usado para iniciar o jogo.</small></span><input id="gameShellAutoFullscreen" type="checkbox" checked /><i aria-hidden="true"></i></label>
+          <label class="shell-setting-card"><span><strong data-i18n="shellAutoplay">Tentar áudio automaticamente</strong><small data-i18n="shellAutoplaySub">Delega autoplay ao jogo. O navegador ainda pode exigir uma interação dentro dele.</small></span><input id="gameShellAutoplay" type="checkbox" checked /><i aria-hidden="true"></i></label>
+          <label class="shell-setting-card"><span><strong data-i18n="shellAutoHideBar">Ocultar barra durante a partida</strong><small data-i18n="shellAutoHideBarSub">Esconde a barra superior após alguns segundos e mostra novamente ao mover o mouse para o topo.</small></span><input id="gameShellAutoHideBar" type="checkbox" /><i aria-hidden="true"></i></label>
+        </div>
+      </div>
+
       <div class="setting-group typography-setting-group">
         <div class="setting-copy"><h3 data-i18n="typography">Tipografia</h3></div>
         <div class="typography-block">
@@ -560,9 +571,51 @@
     </form>
   </dialog>
 
+
+  <section class="game-shell-overlay" id="gameShell" hidden aria-hidden="true" aria-label="ZOINHO Game Shell">
+    <div class="game-shell-reveal-zone" aria-hidden="true"></div>
+    <header class="game-shell-bar">
+      <div class="game-shell-left">
+        <button class="game-shell-icon-button" id="gameShellBack" type="button" data-i18n-aria-label="shellBack" data-i18n-title="shellBack" aria-label="Voltar ao portal" title="Voltar ao portal">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="game-shell-brand">ZG</span>
+        <span class="game-shell-divider" aria-hidden="true"></span>
+        <div class="game-shell-game-copy"><small id="gameShellKicker">ZOINHO GAME</small><strong id="gameShellTitle">Jogo</strong></div>
+      </div>
+      <div class="game-shell-telemetry" aria-live="polite">
+        <span class="game-shell-status" id="gameShellCloud" data-state="local">SAVE LOCAL</span>
+        <span class="game-shell-status" id="gameShellAudio" data-state="enabled">AUTOPLAY PERMITIDO</span>
+      </div>
+      <div class="game-shell-actions">
+        <button class="game-shell-action" id="gameShellNewTab" type="button" data-i18n-title="shellNewTab" title="Abrir em nova aba">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-7 7"/><path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg><span data-i18n="shellNewTab">Abrir em nova aba</span>
+        </button>
+        <button class="game-shell-icon-button" id="gameShellFullscreen" type="button" aria-label="Tela cheia" title="Tela cheia">
+          <svg class="icon shell-enter-fullscreen" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+          <svg class="icon shell-exit-fullscreen" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="game-shell-stage">
+      <iframe id="gameShellFrame" class="game-shell-frame" title="Jogo no ZOINHO Game Shell" allow="autoplay; fullscreen; gamepad" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="game-shell-loading" id="gameShellLoading">
+        <div class="game-shell-loader-mark" aria-hidden="true"><span>ZG</span><i></i></div>
+        <div><span class="section-kicker">GAME SHELL</span><h2 id="gameShellLoadingTitle">Preparando sessão</h2><p id="gameShellLoadingDetail">Conectando jogo, áudio e Cloud Save.</p></div>
+      </div>
+      <div class="game-shell-bridge-warning" id="gameShellBridgeWarning" hidden role="alertdialog" aria-labelledby="gameShellBridgeWarningTitle">
+        <div class="game-shell-warning-card">
+          <span class="game-shell-warning-icon" aria-hidden="true">!</span>
+          <div><span class="section-kicker">CLOUD BRIDGE</span><h2 id="gameShellBridgeWarningTitle" data-i18n="shellBridgeLegacyTitle">Cloud Save não respondeu</h2><p data-i18n="shellBridgeLegacyText">Este jogo pode estar usando uma bridge antiga. Abra em nova aba para preservar a sincronização ou continue localmente nesta sessão.</p></div>
+          <div class="game-shell-warning-actions"><button class="button button-primary" id="gameShellBridgeNewTab" type="button" data-i18n="shellNewTab">Abrir em nova aba</button><button class="button button-ghost" id="gameShellContinueLocal" type="button" data-i18n="shellContinueLocal">Continuar local</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=platform-1.10.0"></script>
-  <script src="app.js?v=platform-1.10.0"></script>
+  <script src="supabase-config.js?v=platform-1.11.0"></script>
+  <script src="app.js?v=platform-1.11.0"></script>
 </body>
 </html>

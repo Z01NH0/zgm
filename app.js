@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.10.0';
+  const ZOINHO_CLOUD_BUILD = '1.11.0';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -11,7 +11,11 @@
     fontSize: 'zoinho-games-font-size-v1',
     fontFamily: 'zoinho-games-font-family-v1',
     localProfiles: 'zoinho-games-local-profiles-v1',
-    guestSession: 'zoinho-games-guest-session-v1'
+    guestSession: 'zoinho-games-guest-session-v1',
+    gameShellEnabled: 'zoinho-games-shell-enabled-v1',
+    gameShellAutoFullscreen: 'zoinho-games-shell-auto-fullscreen-v1',
+    gameShellAutoplay: 'zoinho-games-shell-autoplay-v1',
+    gameShellAutoHideBar: 'zoinho-games-shell-auto-hide-bar-v1'
   };
 
   // A v1/v2 antiga mantinha uma cópia redundante dos saves dos jogos no domínio
@@ -241,6 +245,33 @@
       fontClassic: 'Clássica e elegante',
       fontRetro: 'Retrô e monoespaçada',
       fontFantasy: 'Fantasia caótica',
+      shellSettingsTitle: 'Game Shell',
+      shellSettingsText: 'Controle como os jogos abrem pelo portal.',
+      shellEnabled: 'Abrir jogos no Game Shell',
+      shellEnabledSub: 'Mantém o portal ativo e executa o jogo dentro da interface ZOINHO.',
+      shellAutoFullscreen: 'Tela cheia automática',
+      shellAutoFullscreenSub: 'Tenta entrar em tela cheia no mesmo clique usado para iniciar o jogo.',
+      shellAutoplay: 'Tentar áudio automaticamente',
+      shellAutoplaySub: 'Delega autoplay ao jogo. O navegador ainda pode exigir uma interação dentro dele.',
+      shellAutoHideBar: 'Ocultar barra durante a partida',
+      shellAutoHideBarSub: 'Esconde a barra superior após alguns segundos e mostra novamente ao mover o mouse para o topo.',
+      shellBack: 'Voltar ao portal',
+      shellNewTab: 'Abrir em nova aba',
+      shellFullscreen: 'Tela cheia',
+      shellExitFullscreen: 'Sair da tela cheia',
+      shellLoading: 'Preparando sessão',
+      shellLoadingDetail: 'Conectando jogo, áudio e Cloud Save.',
+      shellLocal: 'SAVE LOCAL',
+      shellCloudWaiting: 'CLOUD AGUARDANDO',
+      shellCloudConnecting: 'CLOUD CONECTANDO',
+      shellCloudSynced: 'CLOUD SINCRONIZADO',
+      shellCloudError: 'CLOUD COM ERRO',
+      shellAudioOn: 'AUTOPLAY PERMITIDO',
+      shellAudioOff: 'AUTOPLAY DESLIGADO',
+      shellFrameFallback: 'Se o jogo não carregar aqui, use “Abrir em nova aba”.',
+      shellBridgeLegacyTitle: 'Cloud Save não respondeu',
+      shellBridgeLegacyText: 'Este jogo pode estar usando uma bridge antiga. Abra em nova aba para preservar a sincronização ou continue localmente nesta sessão.',
+      shellContinueLocal: 'Continuar local',
       reset: 'Restaurar padrão',
       done: 'Concluído',
       platform: 'Plataforma',
@@ -474,6 +505,33 @@
       fontClassic: 'Classic and elegant',
       fontRetro: 'Retro and monospaced',
       fontFantasy: 'Chaotic fantasy',
+      shellSettingsTitle: 'Game Shell',
+      shellSettingsText: 'Control how games open through the portal.',
+      shellEnabled: 'Open games in Game Shell',
+      shellEnabledSub: 'Keeps the portal active and runs the game inside the ZOINHO interface.',
+      shellAutoFullscreen: 'Automatic fullscreen',
+      shellAutoFullscreenSub: 'Attempts fullscreen from the same click used to launch the game.',
+      shellAutoplay: 'Try audio automatically',
+      shellAutoplaySub: 'Delegates autoplay to the game. The browser may still require an interaction inside it.',
+      shellAutoHideBar: 'Hide bar while playing',
+      shellAutoHideBarSub: 'Hides the top bar after a few seconds and reveals it again when the pointer reaches the top.',
+      shellBack: 'Back to portal',
+      shellNewTab: 'Open in new tab',
+      shellFullscreen: 'Fullscreen',
+      shellExitFullscreen: 'Exit fullscreen',
+      shellLoading: 'Preparing session',
+      shellLoadingDetail: 'Connecting game, audio and Cloud Save.',
+      shellLocal: 'LOCAL SAVE',
+      shellCloudWaiting: 'CLOUD WAITING',
+      shellCloudConnecting: 'CLOUD CONNECTING',
+      shellCloudSynced: 'CLOUD SYNCED',
+      shellCloudError: 'CLOUD ERROR',
+      shellAudioOn: 'AUTOPLAY ALLOWED',
+      shellAudioOff: 'AUTOPLAY OFF',
+      shellFrameFallback: 'If the game does not load here, use “Open in new tab”.',
+      shellBridgeLegacyTitle: 'Cloud Save did not respond',
+      shellBridgeLegacyText: 'This game may still use a legacy bridge. Open it in a new tab to preserve sync or continue locally for this session.',
+      shellContinueLocal: 'Continue locally',
       reset: 'Restore defaults',
       done: 'Done',
       platform: 'Platform',
@@ -989,7 +1047,8 @@
   const FALLBACK_STORAGE_BRIDGE_GAMES = new Map([
     ['blood-machine', { title: 'Blood Machine', origin: 'https://blood-machine.vercel.app', saveVersion: 1, saveKeys: ['bloodMachineProgressUpdate12'] }],
     ['dead-signal', { title: 'Dead Signal', origin: 'https://zombie-survival-six.vercel.app', saveVersion: 1, saveKeys: ['dead_signal_nightfall_v1'] }],
-    ['heroes-battle', { title: 'Heroes Battle', origin: 'https://heroes-battle-ultimate-version.vercel.app', saveVersion: 1, saveKeys: ['hb-rune-progression-v2', 'hb-reforged2-best'] }]
+    ['heroes-battle', { title: 'Heroes Battle', origin: 'https://heroes-battle-ultimate-version.vercel.app', saveVersion: 1, saveKeys: ['hb-rune-progression-v2', 'hb-reforged2-best'] }],
+    ['racing-stars', { title: 'Racing Stars', origin: 'https://racing-stars.vercel.app', saveVersion: 1, saveKeys: ['racingStars3DReborn_v1'] }]
   ]);
   const storageBridgeGames = new Map(FALLBACK_STORAGE_BRIDGE_GAMES);
 
@@ -1251,6 +1310,11 @@
       record.lastEventAt = bridgeState.lastEventAt;
     }
     renderCloudState();
+    if (gameId && gameId === currentShellGameId && ['handshaking','connected','snapshot-received'].includes(state)) {
+      clearTimeout(shellBridgeTimer);
+      if (gameShellBridgeWarning) gameShellBridgeWarning.hidden = true;
+    }
+    updateGameShellStatus();
   }
 
   function sanitizeBridgeSnapshot(gameId, snapshot) {
@@ -1278,35 +1342,36 @@
     return Object.keys(snapshot.storage).length > 0;
   }
 
-  function bridgeLaunchUrl(game) {
+  function bridgeLaunchUrl(game, options = {}) {
+    const { shell = false } = options;
     // Guest mode is deliberately local-only: no bridge handshake and no cloud snapshot.
     if (!authUser || guestMode || !storageBridgeGames.has(game.id)) return game.url;
     const url = new URL(game.url);
     url.searchParams.set('zoinhoBridge', '1');
     url.searchParams.set('zoinhoBridgeVersion', String(STORAGE_BRIDGE_VERSION));
     url.searchParams.set('zoinhoAutoSync', '1');
-    // A origem do portal viaja com o lançamento para que a bridge consiga validar
-    // automaticamente o opener desta sessão sem pedir confirmação ao jogador.
     url.searchParams.set('zoinhoPortalOrigin', location.origin);
+    if (shell) url.searchParams.set('zoinhoShell', '1');
     return url.toString();
   }
 
   function launchGame(game) {
+    if (!game) return null;
+    if (currentGameShellEnabled) {
+      if (gameModal?.open) closeModal(gameModal);
+      openGameShell(game);
+      if (authUser && !guestMode) void markGamePlayed(game.id);
+      return gameShellFrame?.contentWindow || null;
+    }
     const child = window.open(bridgeLaunchUrl(game), '_blank');
-    if (!child) showToast('O navegador bloqueou a nova aba. Libere pop-ups para jogar.');
+    if (!child) showToast(currentLanguage === 'en' ? 'The browser blocked the new tab.' : 'O navegador bloqueou a nova aba. Libere pop-ups para jogar.');
     else if (authUser && !guestMode) void markGamePlayed(game.id);
     return child;
   }
 
   function bindGameLaunchers() {
-    document.querySelectorAll('[data-launch-game]').forEach(link => {
-      link.addEventListener('click', event => {
-        const game = games.find(item => item.id === link.dataset.launchGame);
-        if (!game) return;
-        event.preventDefault();
-        launchGame(game);
-      });
-    });
+    // v1.11 usa delegação única no document. Isso evita listeners duplicados quando
+    // o catálogo é renderizado novamente por idioma, filtros ou atualização Cloud.
   }
 
   function cloudRowToSnapshot(gameId, row) {
@@ -1333,6 +1398,7 @@
       if (state === 'synced') record.hasCloudSave = true;
     }
     renderCloudState();
+    updateGameShellStatus();
   }
 
   function applyCloudRowMetadata(gameId, row) {
@@ -2020,6 +2086,25 @@
   const themeInputs = [...document.querySelectorAll('input[name="theme"]')];
   const fontSizeInputs = [...document.querySelectorAll('input[name="fontSize"]')];
   const fontFamilyInputs = [...document.querySelectorAll('input[name="fontFamily"]')];
+  const gameShell = document.getElementById('gameShell');
+  const gameShellFrame = document.getElementById('gameShellFrame');
+  const gameShellTitle = document.getElementById('gameShellTitle');
+  const gameShellKicker = document.getElementById('gameShellKicker');
+  const gameShellLoading = document.getElementById('gameShellLoading');
+  const gameShellLoadingTitle = document.getElementById('gameShellLoadingTitle');
+  const gameShellLoadingDetail = document.getElementById('gameShellLoadingDetail');
+  const gameShellCloud = document.getElementById('gameShellCloud');
+  const gameShellAudio = document.getElementById('gameShellAudio');
+  const gameShellBridgeWarning = document.getElementById('gameShellBridgeWarning');
+  const gameShellBridgeNewTab = document.getElementById('gameShellBridgeNewTab');
+  const gameShellContinueLocal = document.getElementById('gameShellContinueLocal');
+  const gameShellBack = document.getElementById('gameShellBack');
+  const gameShellNewTab = document.getElementById('gameShellNewTab');
+  const gameShellFullscreen = document.getElementById('gameShellFullscreen');
+  const gameShellEnabledInput = document.getElementById('gameShellEnabled');
+  const gameShellAutoFullscreenInput = document.getElementById('gameShellAutoFullscreen');
+  const gameShellAutoplayInput = document.getElementById('gameShellAutoplay');
+  const gameShellAutoHideBarInput = document.getElementById('gameShellAutoHideBar');
   const searchInput = document.getElementById('gameSearch');
   const filterButtons = [...document.querySelectorAll('.filter-chip')];
   const gamesGrid = document.getElementById('gamesGrid');
@@ -2096,6 +2181,21 @@
   let currentTheme = localStorage.getItem(STORAGE_KEYS.theme) || 'dark';
   let currentFontSize = localStorage.getItem(STORAGE_KEYS.fontSize) || 'normal';
   let currentFontFamily = localStorage.getItem(STORAGE_KEYS.fontFamily) || 'inter';
+  const readBooleanSetting = (key, fallback) => {
+    const value = localStorage.getItem(key);
+    return value == null ? fallback : value === '1';
+  };
+  let currentGameShellEnabled = readBooleanSetting(STORAGE_KEYS.gameShellEnabled, true);
+  let currentGameShellAutoFullscreen = readBooleanSetting(STORAGE_KEYS.gameShellAutoFullscreen, true);
+  let currentGameShellAutoplay = readBooleanSetting(STORAGE_KEYS.gameShellAutoplay, true);
+  let currentGameShellAutoHideBar = readBooleanSetting(STORAGE_KEYS.gameShellAutoHideBar, false);
+  let currentShellGameId = null;
+  let currentShellGame = null;
+  let shellLocalOverride = false;
+  let shellLoadTimer = 0;
+  let shellBridgeTimer = 0;
+  let shellHideTimer = 0;
+  let shellCloseTimer = 0;
   let currentOpenGameId = null;
   let gameDates = {};
   let datesLoaded = false;
@@ -3128,6 +3228,233 @@
     }
   }
 
+  function persistBooleanSetting(key, value) {
+    localStorage.setItem(key, value ? '1' : '0');
+  }
+
+  function syncGameShellSettingsUi() {
+    if (gameShellEnabledInput) gameShellEnabledInput.checked = currentGameShellEnabled;
+    if (gameShellAutoFullscreenInput) gameShellAutoFullscreenInput.checked = currentGameShellAutoFullscreen;
+    if (gameShellAutoplayInput) gameShellAutoplayInput.checked = currentGameShellAutoplay;
+    if (gameShellAutoHideBarInput) gameShellAutoHideBarInput.checked = currentGameShellAutoHideBar;
+    for (const input of [gameShellAutoFullscreenInput, gameShellAutoplayInput, gameShellAutoHideBarInput]) {
+      if (!input) continue;
+      input.disabled = !currentGameShellEnabled;
+      input.closest('.shell-setting-card')?.classList.toggle('is-disabled', !currentGameShellEnabled);
+    }
+  }
+
+  function applyGameShellPreferences(patch = {}, persist = true) {
+    if (Object.prototype.hasOwnProperty.call(patch, 'enabled')) currentGameShellEnabled = Boolean(patch.enabled);
+    if (Object.prototype.hasOwnProperty.call(patch, 'autoFullscreen')) currentGameShellAutoFullscreen = Boolean(patch.autoFullscreen);
+    if (Object.prototype.hasOwnProperty.call(patch, 'autoplay')) currentGameShellAutoplay = Boolean(patch.autoplay);
+    if (Object.prototype.hasOwnProperty.call(patch, 'autoHideBar')) currentGameShellAutoHideBar = Boolean(patch.autoHideBar);
+    syncGameShellSettingsUi();
+    if (persist) {
+      persistBooleanSetting(STORAGE_KEYS.gameShellEnabled, currentGameShellEnabled);
+      persistBooleanSetting(STORAGE_KEYS.gameShellAutoFullscreen, currentGameShellAutoFullscreen);
+      persistBooleanSetting(STORAGE_KEYS.gameShellAutoplay, currentGameShellAutoplay);
+      persistBooleanSetting(STORAGE_KEYS.gameShellAutoHideBar, currentGameShellAutoHideBar);
+    }
+    if (gameShell && !gameShell.hidden) {
+      gameShell.classList.toggle('game-shell-auto-hide', currentGameShellAutoHideBar);
+      gameShell.classList.toggle('game-shell-bar-visible', !currentGameShellAutoHideBar);
+      updateGameShellStatus();
+    }
+  }
+
+  function shellCloudLabel() {
+    const copy = getCopy();
+    if (shellLocalOverride || !currentShellGameId || !authUser || guestMode || !storageBridgeGames.has(currentShellGameId)) return { text: copy.shellLocal, state: 'local' };
+    const bridge = bridgeGameRecords.get(currentShellGameId);
+    const cloud = cloudGameRecords.get(currentShellGameId);
+    if (bridge?.state === 'error' || bridge?.state === 'account-changed' || cloud?.state === 'error' || cloud?.state === 'conflict' || cloud?.state === 'version-mismatch') return { text: copy.shellCloudError, state: 'error' };
+    if (cloud?.state === 'synced') return { text: copy.shellCloudSynced, state: 'synced' };
+    if (['handshaking','connected','snapshot-received'].includes(bridge?.state) || cloud?.state === 'syncing') return { text: copy.shellCloudConnecting, state: 'connecting' };
+    return { text: copy.shellCloudWaiting, state: 'waiting' };
+  }
+
+  function updateGameShellStatus() {
+    if (!gameShellCloud || !gameShellAudio) return;
+    const cloud = shellCloudLabel();
+    gameShellCloud.textContent = cloud.text;
+    gameShellCloud.dataset.state = cloud.state;
+    gameShellAudio.textContent = currentGameShellAutoplay ? getCopy().shellAudioOn : getCopy().shellAudioOff;
+    gameShellAudio.dataset.state = currentGameShellAutoplay ? 'enabled' : 'disabled';
+    if (gameShellFullscreen) {
+      const active = document.fullscreenElement === gameShell;
+      gameShellFullscreen.dataset.active = active ? '1' : '0';
+      gameShellFullscreen.title = active ? getCopy().shellExitFullscreen : getCopy().shellFullscreen;
+      gameShellFullscreen.setAttribute('aria-label', gameShellFullscreen.title);
+    }
+  }
+
+  function showGameShellBarTemporarily() {
+    if (!gameShell || !currentGameShellAutoHideBar || gameShell.hidden) return;
+    gameShell.classList.add('game-shell-bar-visible');
+    clearTimeout(shellHideTimer);
+    shellHideTimer = setTimeout(() => {
+      const barHovered = gameShell?.querySelector('.game-shell-bar')?.matches(':hover');
+      if (!barHovered) gameShell.classList.remove('game-shell-bar-visible');
+    }, 2600);
+  }
+
+  function setShellLoading(visible, title = null, detail = null) {
+    if (!gameShellLoading) return;
+    gameShellLoading.hidden = !visible;
+    if (title && gameShellLoadingTitle) gameShellLoadingTitle.textContent = title;
+    if (detail && gameShellLoadingDetail) gameShellLoadingDetail.textContent = detail;
+  }
+
+  function openGameShell(game) {
+    if (!gameShell || !gameShellFrame) return window.open(bridgeLaunchUrl(game), '_blank');
+    clearTimeout(shellCloseTimer);
+    clearTimeout(shellLoadTimer);
+    clearTimeout(shellBridgeTimer);
+    currentShellGame = game;
+    currentShellGameId = game.id;
+    shellLocalOverride = false;
+    document.body.classList.add('game-shell-open');
+    gameShell.hidden = false;
+    gameShell.setAttribute('aria-hidden', 'false');
+    gameShell.classList.toggle('game-shell-auto-hide', currentGameShellAutoHideBar);
+    gameShell.classList.toggle('game-shell-bar-visible', !currentGameShellAutoHideBar);
+    gameShell.classList.remove('game-shell-playing', 'game-shell-load-slow');
+    if (gameShellBridgeWarning) gameShellBridgeWarning.hidden = true;
+    if (gameShellTitle) gameShellTitle.textContent = game.title;
+    if (gameShellKicker) gameShellKicker.textContent = game.kicker || 'ZOINHO GAME';
+    setShellLoading(true, getCopy().shellLoading, getCopy().shellLoadingDetail);
+    gameShellFrame.title = `${game.title} — ZOINHO Game Shell`;
+    gameShellFrame.setAttribute('allow', currentGameShellAutoplay ? 'autoplay; fullscreen; gamepad' : 'fullscreen; gamepad');
+    gameShellFrame.allowFullscreen = true;
+    updateGameShellStatus();
+
+    // Fullscreen precisa nascer diretamente do gesto do botão JOGAR. Não esperamos fetch,
+    // animação nem handshake antes de pedir, para não perder a transient user activation.
+    if (currentGameShellAutoFullscreen && !document.fullscreenElement && gameShell.requestFullscreen) {
+      void gameShell.requestFullscreen().catch(error => {
+        console.info('[ZOINHO Shell] Fullscreen automático não foi autorizado; mantendo o Shell em janela.', error);
+        updateGameShellStatus();
+      });
+    }
+
+    gameShellFrame.src = bridgeLaunchUrl(game, { shell: true });
+    const cloudIntegrated = Boolean(authUser && !guestMode && storageBridgeGames.has(game.id));
+    if (cloudIntegrated) {
+      shellBridgeTimer = setTimeout(() => {
+        if (!gameShell || gameShell.hidden || currentShellGameId !== game.id) return;
+        const active = activeBridgeWindows.get(game.id);
+        if (active?.authorized || ['handshaking','connected','snapshot-received'].includes(bridgeGameRecords.get(game.id)?.state)) return;
+        if (gameShellBridgeWarning) gameShellBridgeWarning.hidden = false;
+        if (gameShellCloud) {
+          gameShellCloud.textContent = getCopy().shellCloudError;
+          gameShellCloud.dataset.state = 'error';
+        }
+      }, 8000);
+    }
+    shellLoadTimer = setTimeout(() => {
+      if (!gameShell || gameShell.hidden || currentShellGameId !== game.id) return;
+      gameShell.classList.add('game-shell-load-slow');
+      if (gameShellLoadingDetail) gameShellLoadingDetail.textContent = getCopy().shellFrameFallback;
+    }, 8000);
+    if (currentGameShellAutoHideBar) showGameShellBarTemporarily();
+  }
+
+  function cleanupShellBridgeBinding(gameId) {
+    if (!gameId) return;
+    const active = activeBridgeWindows.get(gameId);
+    if (active) {
+      clearHandshakeTimer(active);
+      try { bridgeWindowBindings.delete(active.source); } catch {}
+      activeBridgeWindows.delete(gameId);
+    }
+    if (bridgeGameRecords.has(gameId)) setBridgeState('waiting', gameId);
+  }
+
+  function finalizeCloseGameShell() {
+    clearTimeout(shellCloseTimer);
+    clearTimeout(shellLoadTimer);
+    clearTimeout(shellBridgeTimer);
+    clearTimeout(shellHideTimer);
+    const gameId = currentShellGameId;
+    if (document.fullscreenElement === gameShell && document.exitFullscreen) void document.exitFullscreen().catch(() => {});
+    if (gameShellFrame) {
+      gameShellFrame.src = 'about:blank';
+      gameShellFrame.removeAttribute('srcdoc');
+    }
+    cleanupShellBridgeBinding(gameId);
+    currentShellGameId = null;
+    currentShellGame = null;
+    shellLocalOverride = false;
+    if (gameShell) {
+      gameShell.hidden = true;
+      gameShell.setAttribute('aria-hidden', 'true');
+      gameShell.classList.remove('game-shell-playing', 'game-shell-load-slow', 'game-shell-bar-visible');
+    }
+    document.body.classList.remove('game-shell-open');
+    updateGameShellStatus();
+  }
+
+  function closeGameShell() {
+    if (!gameShell || gameShell.hidden) return;
+    const gameId = currentShellGameId;
+    const requested = Boolean(gameId && requestActiveGameSnapshot(gameId, { silent: true }));
+    setShellLoading(true, currentLanguage === 'en' ? 'Closing session' : 'Fechando sessão', currentLanguage === 'en' ? 'Saving the latest progress before returning.' : 'Salvando o progresso mais recente antes de voltar.');
+    clearTimeout(shellCloseTimer);
+    shellCloseTimer = setTimeout(finalizeCloseGameShell, requested ? 520 : 80);
+  }
+
+  function openShellGameInNewTab() {
+    if (!currentShellGame) return;
+    const child = window.open(bridgeLaunchUrl(currentShellGame), '_blank');
+    if (!child) {
+      showToast(currentLanguage === 'en' ? 'The browser blocked the new tab.' : 'O navegador bloqueou a nova aba.');
+      return;
+    }
+    finalizeCloseGameShell();
+  }
+
+  function continueShellLocally() {
+    if (!currentShellGame || !gameShellFrame) return;
+    clearTimeout(shellBridgeTimer);
+    shellLocalOverride = true;
+    cleanupShellBridgeBinding(currentShellGameId);
+    if (gameShellBridgeWarning) gameShellBridgeWarning.hidden = true;
+    setShellLoading(true, currentLanguage === 'en' ? 'Local session' : 'Sessão local', currentLanguage === 'en' ? 'Reloading without Cloud Bridge.' : 'Recarregando sem a Cloud Bridge.');
+    gameShellFrame.src = currentShellGame.url;
+    updateGameShellStatus();
+  }
+
+  function toggleShellFullscreen() {
+    if (!gameShell || gameShell.hidden) return;
+    if (document.fullscreenElement === gameShell) {
+      if (document.exitFullscreen) void document.exitFullscreen().catch(() => {});
+    } else if (gameShell.requestFullscreen) {
+      void gameShell.requestFullscreen().catch(() => showToast(currentLanguage === 'en' ? 'Fullscreen was blocked by the browser.' : 'O navegador bloqueou a tela cheia.'));
+    }
+  }
+
+  gameShellFrame?.addEventListener('load', () => {
+    if (!currentShellGameId || gameShellFrame.src === 'about:blank') return;
+    clearTimeout(shellLoadTimer);
+    gameShell?.classList.add('game-shell-playing');
+    gameShell?.classList.remove('game-shell-load-slow');
+    setShellLoading(false);
+    try { gameShellFrame.focus(); } catch {}
+    if (currentGameShellAutoHideBar) showGameShellBarTemporarily();
+  });
+  gameShellBack?.addEventListener('click', closeGameShell);
+  gameShellNewTab?.addEventListener('click', openShellGameInNewTab);
+  gameShellBridgeNewTab?.addEventListener('click', openShellGameInNewTab);
+  gameShellContinueLocal?.addEventListener('click', continueShellLocally);
+  gameShellFullscreen?.addEventListener('click', toggleShellFullscreen);
+  gameShell?.addEventListener('mousemove', event => {
+    if (!currentGameShellAutoHideBar) return;
+    if (event.clientY <= 72) showGameShellBarTemporarily();
+  });
+  gameShell?.addEventListener('focusin', showGameShellBarTemporarily);
+  document.addEventListener('fullscreenchange', updateGameShellStatus);
+
   function applyTypography(fontSize = currentFontSize, fontFamily = currentFontFamily, persist = true) {
     const allowedSizes = new Set(['compact', 'normal', 'comfortable', 'large']);
     const allowedFamilies = new Set(['inter', 'open-sans', 'montserrat', 'georgia', 'courier', 'papyrus']);
@@ -3667,9 +3994,19 @@
       const key = element.dataset.i18nPlaceholder;
       if (copy[key] != null) element.placeholder = copy[key];
     });
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
+      const key = element.dataset.i18nAriaLabel;
+      if (copy[key] != null) element.setAttribute('aria-label', copy[key]);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(element => {
+      const key = element.dataset.i18nTitle;
+      if (copy[key] != null) element.title = copy[key];
+    });
 
     renderFeatured();
     renderCatalog();
+    updateGameShellStatus();
+    if (gameShellLoadingTitle && !gameShellLoading?.hidden) gameShellLoadingTitle.textContent = getCopy().shellLoading;
     if (currentOpenGameId) openGameDetails(currentOpenGameId, true);
     if (reviewDialogGameId && document.getElementById('reviewModal')?.open) {
       document.getElementById('reviewModalTitle').textContent = communityCopy().reviewsTitle;
@@ -3755,7 +4092,7 @@
 
   document.addEventListener('click', event => {
     const link = event.target.closest?.('[data-launch-game]');
-    if (!link || link.closest('#gamesGrid')) return;
+    if (!link) return;
     const game = games.find(item => item.id === link.dataset.launchGame);
     if (!game) return;
     event.preventDefault();
@@ -3855,10 +4192,28 @@
     showToast(getCopy().settingsSaved);
   });
 
+  gameShellEnabledInput?.addEventListener('change', () => {
+    applyGameShellPreferences({ enabled: gameShellEnabledInput.checked });
+    showToast(getCopy().settingsSaved);
+  });
+  gameShellAutoFullscreenInput?.addEventListener('change', () => {
+    applyGameShellPreferences({ autoFullscreen: gameShellAutoFullscreenInput.checked });
+    showToast(getCopy().settingsSaved);
+  });
+  gameShellAutoplayInput?.addEventListener('change', () => {
+    applyGameShellPreferences({ autoplay: gameShellAutoplayInput.checked });
+    showToast(getCopy().settingsSaved);
+  });
+  gameShellAutoHideBarInput?.addEventListener('change', () => {
+    applyGameShellPreferences({ autoHideBar: gameShellAutoHideBarInput.checked });
+    showToast(getCopy().settingsSaved);
+  });
+
   document.getElementById('resetSettings').addEventListener('click', () => {
     applyTheme('dark');
     applyTypography('normal', 'inter');
     applyLanguage('pt-BR');
+    applyGameShellPreferences({ enabled: true, autoFullscreen: true, autoplay: true, autoHideBar: false });
     searchInput.value = '';
     setActiveFilter('all');
     showToast(getCopy().defaultsRestored);
@@ -3893,6 +4248,11 @@
   });
 
   document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && gameShell && !gameShell.hidden && document.fullscreenElement !== gameShell) {
+      event.preventDefault();
+      closeGameShell();
+      return;
+    }
     if (event.key === '/' && !settingsModal.open && !gameModal.open && !accountModal.open && document.activeElement !== searchInput) {
       event.preventDefault();
       searchInput.focus();
@@ -3999,6 +4359,7 @@
   applyTheme(currentTheme, false);
   applyTypography(currentFontSize, currentFontFamily, false);
   applyLanguage(currentLanguage, false);
+  applyGameShellPreferences({}, false);
   setActiveFilter('all');
   setAuthMode('login');
   renderAccount();

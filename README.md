@@ -1,38 +1,83 @@
-# 🎮 ZOINHO GAMES
+# 🎮 ZOINHO GAMES — Platform v1.11.0
 
-A **ZOINHO GAMES** é um portal criado para reunir jogos independentes em um único lugar. O catálogo apresenta jogos desenvolvidos por **Z01NH0** e também projetos de criadores parceiros, como **Klipza**.
+A ZOINHO GAMES é o portal central da plataforma: catálogo, conta, perfis, avaliações, títulos, administração e Cloud Save entre jogos hospedados em domínios diferentes.
 
-A proposta é simples: entrar no site, encontrar um jogo interessante, conferir suas informações e começar a jogar diretamente pelo navegador.
+## Arquitetura atual
 
-## ✨ Principais recursos
+- **Portal**: autoridade da sessão/auth e único frontend que conversa com o Supabase para Cloud Save.
+- **Jogos**: continuam independentes, com `localStorage` próprio e funcionamento local/offline.
+- **Storage Bridge**: comunicação Portal ↔ jogo via `postMessage`, com `WindowProxy`, origin, nonce, `gameId`, `userId` e protocolo validados.
+- **Cloud Save**: cópia sincronizada do save local. O token Supabase nunca é enviado ao jogo.
+- **Catálogo**: carregado da tabela `games` com fallback local; a vitrine pública é ordenada alfabeticamente.
 
-- Catálogo com capas próprias para cada jogo.
-- Busca por nome, estilo ou gênero.
-- Filtros para encontrar jogos com mais facilidade.
-- Informações de plataforma, modo de jogo, gêneros e criador.
-- Data de criação e última atualização automática nos projetos conectados à Vercel.
-- Tema escuro em preto e vermelho.
-- Tema claro em branco e azul.
-- Interface em português e inglês.
-- Layout adaptado para computador e celular.
-- Botão **Jogar agora** para abrir cada jogo no navegador.
+## v1.11.0 — Game Shell
 
-## 🕹️ Catálogo
+A v1.11.0 adiciona o **ZOINHO Game Shell**: jogos podem abrir dentro do portal em um iframe fullscreen com barra superior própria, status do Cloud Save, delegação de autoplay, botão de nova aba e fallback para bridges legadas. As preferências ficam locais no portal: Game Shell, fullscreen automático, tentativa de autoplay e auto-ocultação da barra.
 
-O portal conta atualmente com **19 jogos**:
+A bridge continua usando `zoinho-storage-v2`/versão 2, mas bridges compatíveis com o Shell aceitam o portal por `window.parent` quando embutidas e por `window.opener` no modo legado. Não há migration SQL nova na v1.11.
 
-## 🎨 Aparência
+## v1.10.0 — hardening
 
-O tema principal utiliza preto e vermelho. Também existe uma opção clara em branco e azul. O idioma e o tema escolhidos ficam salvos no navegador.
+A v1.10.0 adiciona:
 
-## 🌐 Como jogar
+- controle otimista de concorrência para Cloud Save por `revision`;
+- bloqueio seguro de saves com `save_version` incompatível;
+- RPC atômica `zoinho_write_game_save` para evitar overwrite silencioso entre dispositivos;
+- exibição de revisão e versão do save no modal de Cloud Save;
+- avatar novo em Supabase Storage (`profile-avatars`) com fallback para Data URL legado;
+- `verified_player` baseado em atividade real do jogo ou Cloud Save;
+- integridade entre títulos possuídos e títulos equipados;
+- bootstrap de admin portátil, sem UUID pessoal hardcoded na migration reutilizável;
+- remoção do fluxo legado de autorização manual do portal;
+- catálogo público e lista de Cloud Save em ordem alfabética.
 
-Abra o portal, procure um jogo no catálogo e clique em **Jogar agora**. Cada jogo será aberto no endereço oficial em que está hospedado.
+## Instalação do banco do zero
 
-## 👤 Portal criado por
+No mesmo projeto Supabase usado pelo portal, execute nesta ordem:
 
-O portal **ZOINHO GAMES** foi criado e organizado por **Z01NH0**. Cada jogo mantém o nome de seu respectivo criador na área de detalhes.
+1. `supabase-game-saves.sql`
+2. `supabase-user-profiles.sql`
+3. `supabase-platform-v1.7-admin-catalog.sql`
+4. `supabase-bootstrap-admin.example.sql` **depois de trocar o e-mail pelo administrador real**
+5. `supabase-platform-v1.7-reviews.sql`
+6. `supabase-platform-v1.7-game-covers.sql`
+7. `supabase-platform-v1.7-seed.sql`
+8. `supabase-platform-v1.8-public-profiles-titles.sql`
+9. `supabase-platform-v1.10-hardening.sql`
+10. `supabase-v1.10-diagnostics.sql` para conferência.
+
+Os arquivos de diagnóstico antigos são somente leitura e podem continuar sendo usados, mas `supabase-v1.10-diagnostics.sql` é a checagem recomendada para a versão atual.
+
+## Configuração externa ainda necessária
+
+O SQL não configura serviços externos. Em um projeto novo também precisam ser configurados:
+
+- URL e chave pública do Supabase em `supabase-config.js`;
+- provedores e Redirect/Site URLs do Supabase Auth;
+- `VERCEL_API_TOKEN` na Vercel;
+- `VERCEL_TEAM_ID`, se o projeto exigir escopo de equipe;
+- domínios/origins corretos dos jogos na tabela `games`.
+
+## Regra para novos jogos com Cloud Save
+
+Um jogo integrado deve manter o save local, carregar `zoinho-storage-config.js` + `zoinho-storage-bridge.js`, declarar somente as chaves persistentes que realmente devem viajar para a nuvem e usar o Auto-Sync no boot. O portal deve ter `bridge_enabled=true`, `bridge_origin`, `bridge_save_version` e `bridge_save_keys` corretos.
+
+Nunca dependa de `document.referrer` após reload interno. A bridge deve preservar a origem já validada em `sessionStorage` durante a vida daquela aba.
+
+## Deploy v1.11.0 em uma instalação existente
+
+Se o portal atual já é **v1.10.0**, não há SQL novo para a v1.11.0. Publique apenas os arquivos do portal e as bridges compatíveis nos jogos.
+
+Para instalações anteriores à v1.10:
+
+1. Execute `supabase-platform-v1.10-hardening.sql` no banco atual.
+2. Rode `supabase-v1.10-diagnostics.sql`.
+3. Publique o portal v1.11.0.
+4. Nos jogos Cloud que serão usados dentro do Shell, publique a bridge compatível com `window.parent`/`window.opener`.
+5. Não aumente `bridge_save_version` de nenhum jogo sem uma estratégia de migração compatível com o formato de save daquele jogo.
+
+A v1.10 não faz fallback para escrita direta. Se a RPC ainda não estiver instalada, o upload para a nuvem falha de forma segura e o save local permanece preservado. Execute a migration antes de publicar o portal.
 
 ---
 
-**ZOINHO GAMES** — Um lugar. Todos os jogos.
+**ZOINHO GAMES** — Um lugar. Todos os jogos. E, idealmente, sem dois PCs brigando para decidir qual save merece existir. 🍮
