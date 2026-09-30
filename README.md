@@ -1,4 +1,4 @@
-# 🎮 ZOINHO GAMES — Platform v1.11.0
+# 🎮 ZOINHO GAMES — Platform v1.11.1
 
 A ZOINHO GAMES é o portal central da plataforma: catálogo, conta, perfis, avaliações, títulos, administração e Cloud Save entre jogos hospedados em domínios diferentes.
 
@@ -10,11 +10,19 @@ A ZOINHO GAMES é o portal central da plataforma: catálogo, conta, perfis, aval
 - **Cloud Save**: cópia sincronizada do save local. O token Supabase nunca é enviado ao jogo.
 - **Catálogo**: carregado da tabela `games` com fallback local; a vitrine pública é ordenada alfabeticamente.
 
-## v1.11.0 — Game Shell
+## v1.11.1 — Game Shell + Auto Audio Boot
 
-A v1.11.0 adiciona o **ZOINHO Game Shell**: jogos podem abrir dentro do portal em um iframe fullscreen com barra superior própria, status do Cloud Save, delegação de autoplay, botão de nova aba e fallback para bridges legadas. As preferências ficam locais no portal: Game Shell, fullscreen automático, tentativa de autoplay e auto-ocultação da barra.
+### Correção de áudio do Shell
 
-A bridge continua usando `zoinho-storage-v2`/versão 2, mas bridges compatíveis com o Shell aceitam o portal por `window.parent` quando embutidas e por `window.opener` no modo legado. Não há migration SQL nova na v1.11.
+- `zoinhoShell`/`zoinhoAutoplay` agora independem de login/Cloud.
+- O iframe inicia a navegação antes do pedido de fullscreen, ainda no clique em JOGAR.
+- Jogos compatíveis tentam iniciar áudio no boot e preservam o gesto interno como fallback.
+- Sem SQL novo e sem alteração de protocolo/save version.
+
+
+A v1.11.0 introduziu o **ZOINHO Game Shell**: jogos podem abrir dentro do portal em um iframe fullscreen com barra superior própria, status do Cloud Save, delegação de autoplay, botão de nova aba e fallback para bridges legadas. As preferências ficam locais no portal: Game Shell, fullscreen automático, tentativa de autoplay e auto-ocultação da barra.
+
+A bridge continua usando `zoinho-storage-v2`/versão 2, mas bridges compatíveis com o Shell aceitam o portal por `window.parent` quando embutidas e por `window.opener` no modo legado. A v1.11.1 corrige a inicialização de áudio no Shell: o portal passa `zoinhoAutoplay=1`, inicia a navegação do iframe antes do pedido de fullscreen e jogos compatíveis tentam iniciar sua própria engine de áudio no boot. Não há migration SQL nova na v1.11.1.
 
 ## v1.10.0 — hardening
 
@@ -64,15 +72,15 @@ Um jogo integrado deve manter o save local, carregar `zoinho-storage-config.js` 
 
 Nunca dependa de `document.referrer` após reload interno. A bridge deve preservar a origem já validada em `sessionStorage` durante a vida daquela aba.
 
-## Deploy v1.11.0 em uma instalação existente
+## Deploy v1.11.1 em uma instalação existente
 
-Se o portal atual já é **v1.10.0**, não há SQL novo para a v1.11.0. Publique apenas os arquivos do portal e as bridges compatíveis nos jogos.
+Se o portal atual já é **v1.10.0** ou **v1.11.0**, não há SQL novo para a v1.11.1. Publique apenas os arquivos do portal e as bridges compatíveis nos jogos.
 
 Para instalações anteriores à v1.10:
 
 1. Execute `supabase-platform-v1.10-hardening.sql` no banco atual.
 2. Rode `supabase-v1.10-diagnostics.sql`.
-3. Publique o portal v1.11.0.
+3. Publique o portal v1.11.1.
 4. Nos jogos Cloud que serão usados dentro do Shell, publique a bridge compatível com `window.parent`/`window.opener`.
 5. Não aumente `bridge_save_version` de nenhum jogo sem uma estratégia de migração compatível com o formato de save daquele jogo.
 

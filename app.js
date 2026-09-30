@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.11.0';
+  const ZOINHO_CLOUD_BUILD = '1.11.1';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -1344,14 +1344,22 @@
 
   function bridgeLaunchUrl(game, options = {}) {
     const { shell = false } = options;
-    // Guest mode is deliberately local-only: no bridge handshake and no cloud snapshot.
-    if (!authUser || guestMode || !storageBridgeGames.has(game.id)) return game.url;
     const url = new URL(game.url);
+
+    // Game Shell e áudio são independentes do Cloud Save. Mesmo guest mode e jogos
+    // sem bridge recebem estes parâmetros para poderem adaptar UX/áudio ao host.
+    if (shell) {
+      url.searchParams.set('zoinhoShell', '1');
+      if (currentGameShellAutoplay) url.searchParams.set('zoinhoAutoplay', '1');
+    }
+
+    // Guest mode e jogos sem Cloud continuam locais, mas não perdem recursos do Shell.
+    if (!authUser || guestMode || !storageBridgeGames.has(game.id)) return url.toString();
+
     url.searchParams.set('zoinhoBridge', '1');
     url.searchParams.set('zoinhoBridgeVersion', String(STORAGE_BRIDGE_VERSION));
     url.searchParams.set('zoinhoAutoSync', '1');
     url.searchParams.set('zoinhoPortalOrigin', location.origin);
-    if (shell) url.searchParams.set('zoinhoShell', '1');
     return url.toString();
   }
 
@@ -3329,16 +3337,19 @@
     gameShellFrame.allowFullscreen = true;
     updateGameShellStatus();
 
-    // Fullscreen precisa nascer diretamente do gesto do botão JOGAR. Não esperamos fetch,
-    // animação nem handshake antes de pedir, para não perder a transient user activation.
+    // Iniciamos a navegação do iframe ainda dentro do MESMO gesto que acionou JOGAR.
+    // O Chrome recomenda capturar o gesto no host antes de o conteúdo cross-origin
+    // carregar para que a delegação de autoplay possa ser aproveitada pelo jogo.
+    gameShellFrame.src = bridgeLaunchUrl(game, { shell: true });
+
+    // Fullscreen também nasce do mesmo gesto. Ele vem DEPOIS de iniciar a navegação
+    // para não ser a primeira API gated a consumir a transient user activation.
     if (currentGameShellAutoFullscreen && !document.fullscreenElement && gameShell.requestFullscreen) {
       void gameShell.requestFullscreen().catch(error => {
         console.info('[ZOINHO Shell] Fullscreen automático não foi autorizado; mantendo o Shell em janela.', error);
         updateGameShellStatus();
       });
     }
-
-    gameShellFrame.src = bridgeLaunchUrl(game, { shell: true });
     const cloudIntegrated = Boolean(authUser && !guestMode && storageBridgeGames.has(game.id));
     if (cloudIntegrated) {
       shellBridgeTimer = setTimeout(() => {
