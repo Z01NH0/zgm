@@ -6,14 +6,14 @@
   <meta name="description" content="ZOINHO GAMES — catálogo oficial de jogos independentes." />
   <meta name="theme-color" content="#0b0b0e" />
   <title>ZOINHO GAMES</title>
-  <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
-  <link rel="icon" href="/favicon-zoinho-v2.svg" type="image/svg+xml" />
-  <link rel="icon" href="/favicon-32x32.png?v=2" type="image/png" sizes="32x32" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+  <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
+  <link rel="icon" href="/assets/favicon.svg?v=3" type="image/svg+xml" />
+  <link rel="icon" href="/favicon-32x32.png?v=3" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=platform-1.11.4" />
+  <link rel="stylesheet" href="styles.css?v=platform-1.11.5" />
 </head>
 <body>
   <a class="skip-link" href="#catalogo">Pular para o catálogo</a>
@@ -21,7 +21,7 @@
   <header class="site-header">
     <div class="shell header-inner">
       <a class="brand" href="#inicio" aria-label="ZOINHO GAMES - Página inicial">
-        <span class="brand-mark" aria-hidden="true">ZG</span>
+        <span class="brand-mark" aria-hidden="true"><img src="/assets/favicon.svg?v=3" alt="" /></span>
         <span class="brand-copy">
           <strong>ZOINHO</strong>
           <small>GAMES</small>
@@ -204,7 +204,7 @@
   <footer class="site-footer">
     <div class="shell footer-inner">
       <a class="brand brand-footer" href="#inicio" aria-label="ZOINHO GAMES">
-        <span class="brand-mark" aria-hidden="true">ZG</span>
+        <span class="brand-mark" aria-hidden="true"><img src="/assets/favicon.svg?v=3" alt="" /></span>
         <span class="brand-copy"><strong>ZOINHO</strong><small>GAMES</small></span>
       </a>
       <p>© <span id="currentYear"></span> ZOINHO GAMES. <span data-i18n="rights">Todos os direitos reservados.</span></p>
@@ -579,7 +579,7 @@
         <button class="game-shell-icon-button" id="gameShellBack" type="button" data-i18n-aria-label="shellBack" data-i18n-title="shellBack" aria-label="Voltar ao portal" title="Voltar ao portal">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <span class="game-shell-brand">ZG</span>
+        <span class="game-shell-brand" aria-hidden="true"><img src="/assets/favicon.svg?v=3" alt="" /></span>
         <span class="game-shell-divider" aria-hidden="true"></span>
         <div class="game-shell-game-copy"><small id="gameShellKicker">ZOINHO GAME</small><strong id="gameShellTitle">Jogo</strong></div>
       </div>
@@ -601,7 +601,7 @@
     <div class="game-shell-stage">
       <iframe id="gameShellFrame" class="game-shell-frame" title="Jogo no ZOINHO Game Shell" allow="autoplay; fullscreen; gamepad" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
       <div class="game-shell-loading" id="gameShellLoading">
-        <div class="game-shell-loader-mark" aria-hidden="true"><span>ZG</span><i></i></div>
+        <div class="game-shell-loader-mark" aria-hidden="true"><span><img src="/assets/favicon.svg?v=3" alt="" /></span><i></i></div>
         <div><span class="section-kicker">GAME SHELL</span><h2 id="gameShellLoadingTitle">Preparando sessão</h2><p id="gameShellLoadingDetail">Conectando jogo, áudio e Cloud Save.</p></div>
       </div>
       <div class="game-shell-bridge-warning" id="gameShellBridgeWarning" hidden role="alertdialog" aria-labelledby="gameShellBridgeWarningTitle">
@@ -617,6 +617,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=platform-1.11.2"></script>
-  <script src="app.js?v=platform-1.11.4"></script>
+  <script src="app.js?v=platform-1.11.5"></script>
 </body>
 </html>
