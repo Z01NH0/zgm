@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const ZOINHO_CLOUD_BUILD = '1.11.2';
+  const ZOINHO_CLOUD_BUILD = '1.11.3';
   window.__ZOINHO_CLOUD_BUILD = ZOINHO_CLOUD_BUILD;
   console.info(`[ZOINHO Cloud] Portal build ${ZOINHO_CLOUD_BUILD}`);
 
@@ -2110,6 +2110,7 @@
   const gameShellContinueLocal = document.getElementById('gameShellContinueLocal');
   const gameShellBack = document.getElementById('gameShellBack');
   const gameShellCloseBar = document.getElementById('gameShellCloseBar');
+  const gameShellRevealZone = gameShell?.querySelector('.game-shell-reveal-zone');
   const gameShellNewTab = document.getElementById('gameShellNewTab');
   const gameShellFullscreen = document.getElementById('gameShellFullscreen');
   const gameShellEnabledInput = document.getElementById('gameShellEnabled');
@@ -2207,6 +2208,7 @@
   let shellBridgeTimer = 0;
   let shellHideTimer = 0;
   let shellCloseTimer = 0;
+  let shellManualRevealArmed = true;
   let currentOpenGameId = null;
   let gameDates = {};
   let datesLoaded = false;
@@ -3300,17 +3302,32 @@
     }
   }
 
-  function showGameShellBarTemporarily() {
+  function showGameShellBarTemporarily({ allowManualReveal = false } = {}) {
     if (!gameShell || gameShell.hidden) return;
     const wasManualHidden = gameShell.classList.contains('game-shell-bar-manual-hidden');
-    if (wasManualHidden) gameShell.classList.remove('game-shell-bar-manual-hidden');
-    if (!currentGameShellAutoHideBar && !wasManualHidden) return;
-    gameShell.classList.add('game-shell-bar-visible');
+
+    // Manual close wins over every automatic reveal path. The bar may only
+    // return when the pointer deliberately enters the thin reveal zone at
+    // the very top of the Shell. This prevents mouse/focus/load events from
+    // resurrecting the bar immediately after clicking "Fechar barra".
+    if (wasManualHidden && (!allowManualReveal || !shellManualRevealArmed)) return;
+    if (wasManualHidden) {
+      gameShell.classList.remove('game-shell-bar-manual-hidden');
+      shellManualRevealArmed = true;
+    }
+
     clearTimeout(shellHideTimer);
-    if (!currentGameShellAutoHideBar) return;
+    if (!currentGameShellAutoHideBar) {
+      gameShell.classList.add('game-shell-bar-visible');
+      return;
+    }
+
+    gameShell.classList.add('game-shell-bar-visible');
     shellHideTimer = setTimeout(() => {
       const barHovered = gameShell?.querySelector('.game-shell-bar')?.matches(':hover');
-      if (!barHovered) gameShell.classList.remove('game-shell-bar-visible');
+      if (!barHovered && !gameShell.classList.contains('game-shell-bar-manual-hidden')) {
+        gameShell.classList.remove('game-shell-bar-visible');
+      }
     }, 2600);
   }
 
@@ -3319,6 +3336,7 @@
     clearTimeout(shellHideTimer);
     gameShell.classList.remove('game-shell-bar-visible');
     gameShell.classList.add('game-shell-bar-manual-hidden');
+    shellManualRevealArmed = false;
     try { gameShellCloseBar?.blur(); } catch {}
   }
 
@@ -3337,6 +3355,7 @@
     currentShellGame = game;
     currentShellGameId = game.id;
     shellLocalOverride = false;
+    shellManualRevealArmed = true;
     document.body.classList.add('game-shell-open');
     gameShell.hidden = false;
     gameShell.setAttribute('aria-hidden', 'false');
@@ -3412,6 +3431,7 @@
     currentShellGameId = null;
     currentShellGame = null;
     shellLocalOverride = false;
+    shellManualRevealArmed = true;
     if (gameShell) {
       gameShell.hidden = true;
       gameShell.setAttribute('aria-hidden', 'true');
@@ -3475,11 +3495,25 @@
   gameShellBridgeNewTab?.addEventListener('click', openShellGameInNewTab);
   gameShellContinueLocal?.addEventListener('click', continueShellLocally);
   gameShellFullscreen?.addEventListener('click', toggleShellFullscreen);
-  gameShell?.addEventListener('mousemove', event => {
-    if (event.clientY > 72) return;
-    if (currentGameShellAutoHideBar || gameShell.classList.contains('game-shell-bar-manual-hidden')) showGameShellBarTemporarily();
+  gameShellRevealZone?.addEventListener('pointerenter', () => {
+    if (!shellManualRevealArmed) return;
+    showGameShellBarTemporarily({ allowManualReveal: true });
   });
-  gameShell?.addEventListener('focusin', showGameShellBarTemporarily);
+  gameShell?.addEventListener('pointermove', event => {
+    if (gameShell.classList.contains('game-shell-bar-manual-hidden')) {
+      // After clicking Close the pointer is still physically inside the old bar
+      // area. Arm the reveal only after it actually leaves that area, so the
+      // newly enabled reveal zone cannot reopen the bar under the same gesture.
+      if (event.clientY > 72) shellManualRevealArmed = true;
+      return;
+    }
+    if (event.clientY > 72) return;
+    if (currentGameShellAutoHideBar) showGameShellBarTemporarily();
+  });
+  gameShell?.addEventListener('focusin', () => {
+    if (gameShell.classList.contains('game-shell-bar-manual-hidden')) return;
+    if (currentGameShellAutoHideBar) showGameShellBarTemporarily();
+  });
   document.addEventListener('fullscreenchange', updateGameShellStatus);
 
   function applyTypography(fontSize = currentFontSize, fontFamily = currentFontFamily, persist = true) {
